@@ -271,7 +271,7 @@ COD_TIPO_DATO;TIPO_DATO;IDENTIFICADOR_MINT;COD_ELEMENTO;COD_NDP;DIRECCION_COMPLE
 270;Contenedor de ropa;;;;Calle  Boltaña, 14 ;;Centro Salud Canillejas;MADRID;Calle;;Boltaña;número;14;;;;San Blas,Canillejas;447938,01;4477322,53;40.44423;-3.61388;;;;;;
 271;Contenedor de ropa;;;;Calle  Albata, 5 ;;;MADRID;Calle;;Albata;número;5;;;;San Blas,Canillejas;447466,03;4476360,55;40.43623;-3.6194;;;;;;
 272;Contenedor de ropa;;;;Calle  Julian Camarillo, 59 ;;;MADRID;Calle;;Julian Camarillo;número;59;;;;San Blas,Canillejas;447522,77;4476576,64;40.43818;-3.61875;;;;;;
-273;Contenedor de ropa;;;;Calle  San Romualdo, 20 ;;Punto Limpio fijo;MADRID;Calle;;San Romualdo;número;20;;;;San Blas,Canillejas;447149,38;4476848,63;40.4'40.6;-3.62317;;;;;;
+273;Contenedor de ropa;;;;Calle  San Romualdo, 20 ;;Punto Limpio fijo;MADRID;Calle;;San Romualdo;número;20;;;;San Blas,Canillejas;447149,38;4476848,63;40.4406;-3.62317;;;;;;
 274;Contenedor de ropa;;;;Avenida de Niza, 52 ;;Supersol;MADRID;Avenida;de;Niza;número;52;;;;San Blas,Canillejas;448464,04;4476063,74;40.43362;-3.60761;;;;;;
 275;Contenedor de ropa;;;;Calle  Suecia, 79 ;;;MADRID;Calle;;Suecia;número;79;;;;San Blas,Canillejas;448600,39;4475896,45;40.43212;-3.60599;;;;;;
 276;Contenedor de ropa;;;;Calle  Suecia, 10 ;;Polideportivo Pepu Hernández;MADRID;Calle;;Suecia;número;10;;;;San Blas,Canillejas;448320,90;4474750,50;40.42178;-3.60919;;;;;;
@@ -279,7 +279,7 @@ COD_TIPO_DATO;TIPO_DATO;IDENTIFICADOR_MINT;COD_ELEMENTO;COD_NDP;DIRECCION_COMPLE
 278;Contenedor de ropa;;;;Calle  Sofia, 56 ;;Ahorranas;MADRID;Calle;;Sofia;número;56;;;;San Blas,Canillejas;448998,63;4475468,54;40.42829;-3.60126;;;;;;
 279;Contenedor de ropa;;;;Calle  Helsinki, 21 ;;;MADRID;Calle;;Helsinki;número;21;;;;San Blas,Canillejas;448871,26;4475178,57;40.42566;-3.60274;;;;;;
 280;Contenedor de ropa;;;;Avenida  Guadalajara, 125 ;;;MADRID;Avenida;;Guadalajara;número;125;;;;San Blas,Canillejas;448427,97;4475011,86;40.42414;-3.60795;;;;;;
-281;Contenedor de ropa;;;;Avenida  Guadalajara , 51 ;;IDM Campos de Futbol Av Guadalajara;MADRID;Avenida;;Guadalajara ;número;51;;;;San Blas,Canillejas;447569,56;4474548,27;40.41991, ;-3.61803;"Lunes a Viernes 10:00 a 23:00; Sábados y Domingos y festivos 10:00 a 24:00 ";;;;;
+281;Contenedor de ropa;;;;Avenida  Guadalajara , 51 ;;IDM Campos de Futbol Av Guadalajara;MADRID;Avenida;;Guadalajara ;número;51;;;;San Blas,Canillejas;447569,56;4474548,27;40.41991;-3.61803;"Lunes a Viernes 10:00 a 23:00; Sábados y Domingos y festivos 10:00 a 24:00 ";;;;;
 282;Contenedor de ropa;;;;Avenida  Guadalajara , 2 ;;Rastro;MADRID;Avenida;;Guadalajara ;número;2;;;;San Blas,Canillejas;447319,26;4474417,86;40.41872;-3.62097;;;;;;
 283;Contenedor de ropa;;;;Calle  San Román del Valle, 8 ;;Centro Sociocultural Antonio Machado/Mercadillo San Roman del Valle;MADRID;Calle;;San Román del Valle;número;8;;;;San Blas,Canillejas;447274,18;4474515,81;40.4196;-3.62151;;;;;;
 284;Contenedor de ropa;;;;Calle  Aquitania, 19 ;;;MADRID;Calle;;Aquitania;número;19;;;;San Blas,Canillejas;447503,55;4474507,07;40.41884;-3.61877;;;;;;
@@ -289,7 +289,7 @@ COD_TIPO_DATO;TIPO_DATO;IDENTIFICADOR_MINT;COD_ELEMENTO;COD_NDP;DIRECCION_COMPLE
 288;Contenedor de ropa;;;;Calle  Pobladura del Valle , 13 ;;Centro Integrado Pablo Casals;MADRID;Calle;;Pobladura del Valle ;número;13;;;;San Blas,Canillejas;447438,88;4475265,17;40.42636;-3.61963;Lunes a Viernes 9:00 a 14:00 y de 15:00 a 19:00;;;;;
 289;Contenedor de ropa;;;;Calle  Alberique, 16 ;;;MADRID;Calle;;Alberique;número;16;;;;San Blas,Canillejas;447715,81;4475562,84;40.42906;-3.61639;;;;;;
 290;Contenedor de ropa;;;;Calle  Gregorio Lopez Madera , 6 ;;Polideportivo Municipal San Blas;MADRID;Calle;;Gregorio Lopez Madera ;número;6;;;;San Blas,Canillejas;447992,88;4475685,56;40.429487;-3.613099;;;;;;
-291;Contenedor de ropa;;;;Calle  Hinojosa del Duque , 3 ;;Ahorramas/Iglesia;MADRID;Calle;;Hinojosa del Duque ;número;3;;;;San Blas,Canillejas;447922,4;4475880;40.43193, ;-3.61398;;;;;;
+291;Contenedor de ropa;;;;Calle  Hinojosa del Duque , 3 ;;Ahorramas/Iglesia;MADRID;Calle;;Hinojosa del Duque ;número;3;;;;San Blas,Canillejas;447922,4;4475880;40.43193;-3.61398;;;;;;
 292;Contenedor de ropa;;;;Calle de Julia Garcia Boutan, 6 ;;;MADRID;Calle;de;Julia Garcia Boutan;número;6;;;;San Blas,Canillejas;448252,12;4475596,91;40.4294;-3.61007;;;;;;
 293;Contenedor de ropa;;;;Calle de Longares, 20 ;;Dia;MADRID;Calle;de;Longares;número;20;;;;San Blas,Canillejas;448274,93;4475827,62;40.43148;-3.60982;;;;;;
 294;Contenedor de ropa;;;;Calle   Maiquez, 14 ;;;MADRID;Calle;; Maiquez;número;14;;;;Salamanca;442909,20;4474855,25;40.421674;-3.672951;;;;;;
