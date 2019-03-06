@@ -10,6 +10,7 @@ data <- read.csv('data/Contenedores_vidrio_con_publicidad.csv', sep = ";", strin
 
 a <- rgdal::readOGR("data/Madrid_Central/Madrid_Central.shp",
                     layer = "Madrid_Central", GDAL1_integer64_policy = TRUE)
+mylines <- sp::spTransform(a, sp::CRS("+init=epsg:4326"))
 
 data %>% 
   ggplot2::ggplot()+
@@ -33,14 +34,15 @@ epsg32630 <- leaflet::leafletCRS(
 
 
 leaflet::leaflet(data = data, options = leaflet::leafletOptions(minZoom = 0, maxZoom = 18)) %>% 
-  # leaflet::addTiles() %>% 
-  leaflet::addProviderTiles(leaflet::providers$Wikimedia, group = "OSM (default)") %>% 
-  # leaflet::addCircles(lat = ~ Latitud, lng = ~ Longitud) %>% 
-  # leaflet::addAwesomeMarkers( lat = ~ Latitud, lng = ~ Longitud, label = ~Nombre,
-                             # icon = icons, labelOptions = leaflet::labelOptions(textsize = "15px")) %>% 
-  leaflet::addPolylines(data = a, group = "Outline", options = leaflet::leafletOptions(crs = epsg32630)) %>% 
+  # leaflet::addTiles() %>%
+  leaflet::addProviderTiles(leaflet::providers$Wikimedia, group = "Tiles") %>%
+  leaflet::addCircles(lat = ~ Latitud, lng = ~ Longitud, group = "Circles") %>%
+  leaflet::addAwesomeMarkers( lat = ~ Latitud, lng = ~ Longitud, label = ~Nombre,
+                             icon = icons, labelOptions = leaflet::labelOptions(textsize = "15px"),
+                             group = "AwesomeMarkers") %>%
+  leaflet::addPolygons(data = mylines, group = "Madrid Central") %>% 
   leaflet::addLayersControl(
-    overlayGroups = c("OSM (default)", "Outline"),
+    overlayGroups = c("Tiles", "Circles", "AwesomeMarkers","Madrid Central"),
     options = leaflet::layersControlOptions(collapsed = FALSE)
   )
 
