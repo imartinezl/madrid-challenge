@@ -112,18 +112,3 @@ server <- function(input, output, session) {
 }
 
 shiny::shinyApp(ui, server)
-
-# Mapdeck -----------------------------------------------------------------
-
-library(mapdeck)
-mapdeck::set_token(Sys.getenv("MAPBOX"))
-mapdeck::mapdeck_tokens()
-ms = mapdeck::mapdeck_style("streets")
-mapdeck::mapdeck(style = ms, pitch = 0, location = c(-3.70, 40.45), zoom = 11, height = "400px", width = "400px") %>%
-  mapdeck::add_scatterplot(
-    layer_id = "ms",
-    data = data, 
-    lat = "Latitud", 
-    lon = "Longitud",
-    radius = 50,
-    update_view = FALSE)
