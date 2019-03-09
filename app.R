@@ -7,12 +7,16 @@ library(zeallot)
 # Data Importation --------------------------------------------------------
 
 # Contenedores Aceite
-data_contenedores_aceite <- read.csv('data/RecogidaContenedoresAceiteUsado.csv', sep = ";",  dec = ",", stringsAsFactors = F)
+data_contenedores_aceite <- read.csv('data/RecogidaContenedoresAceiteUsado.csv', sep = ";",  dec = ",", stringsAsFactors = F) %>% 
+  dplyr::mutate(LABEL = paste("<b>Dirección:</b> ", DIRECCION_COMPLETA, "<br/><b>Centro:<b>", CENTRO, 
+                              "<br/><b>Horario:<b>", HORARIO, ", ", OBSERVACIONES))
 
 # Contenedores Ropa
 data_contenedores_ropa <- read.csv('data/ContenedoresRopa.csv', sep = ";", dec = ",", stringsAsFactors = F) %>% 
   dplyr::mutate(LONGITUD = as.numeric(sub("\\s", "", LONGITUD)),
-                LATITUD = as.numeric(sub("\\s", "", LATITUD)) )
+                LATITUD = as.numeric(sub("\\s", "", LATITUD)),
+                LABEL = paste("<b>Dirección:</b> ", DIRECCION_COMPLETA, "<br/><b>Centro:<b>", CENTRO, 
+                              "<br/><b>Horario:<b>", HORARIO) )
 
 # Contenedores Pilas
 data_contenedores_pilas <- read.csv('data/Marquesinas_contenedores_pilas_2017.csv', sep = ";",  dec = ",", stringsAsFactors = F) %>% 
@@ -60,12 +64,18 @@ icons <- leaflet::awesomeIcons(
   library = 'ion',
   markerColor = "orange"
 )
+icon_contenedores_aceite <- leaflet::makeIcon( iconUrl = "icons/oil.png", iconWidth = 15, iconHeight = 15)
+icon_contenedores_ropa <- leaflet::makeIcon( iconUrl = "icons/clothing-hanger.png", iconWidth = 15, iconHeight = 15)
+icon_contenedores_pilas <- leaflet::makeIcon( iconUrl = "icons/battery.png", iconWidth = 15, iconHeight = 15)
+icon_contenedores_vidrio <- leaflet::makeIcon( iconUrl = "icons/battery.png", iconWidth = 15, iconHeight = 15)
 
 data_exploring_map <- leaflet::leaflet(options = leaflet::leafletOptions(minZoom = 0, maxZoom = 18)) %>% 
   # leaflet::addTiles() %>%
   leaflet::addProviderTiles(leaflet::providers$Wikimedia, group = "Tiles") %>%
-  leaflet::addCircles(data = data_contenedores_aceite, lat = ~ LATITUD, lng = ~ LONGITUD, group = "Contenedores Aceite") %>%
-  leaflet::addCircles(data = data_contenedores_ropa, lat = ~ LATITUD, lng = ~ LONGITUD, group = "Contenedores Ropa") %>%
+  leaflet::addMarkers(data = data_contenedores_aceite, lat = ~ LATITUD, lng = ~ LONGITUD, group = "Contenedores Aceite", 
+                      icon = icon_contenedores_aceite, label = ~lapply(LABEL, HTML)) %>%
+  leaflet::addMarkers(data = data_contenedores_ropa, lat = ~ LATITUD, lng = ~ LONGITUD, group = "Contenedores Ropa", 
+                      icon = icon_contenedores_ropa, label = ~lapply(LABEL, HTML)) %>%
   leaflet::addCircles(data = data_contenedores_pilas, lat = ~ LATITUD, lng = ~ LONGITUD, group = "Contenedores Pilas") %>%
   # leaflet::addCircles(data = data_contenedores_varios, lat = ~ LATITUD, lng = ~ LONGITUD, group = "Contenedores Varios") %>%
   leaflet::addCircles(data = data_contenedores_vidrio, lat = ~ LATITUD, lng = ~ LONGITUD, group = "Contenedores Vidrio") %>%
@@ -92,7 +102,7 @@ data_exploring_map <- leaflet::leaflet(options = leaflet::leafletOptions(minZoom
     activeColor = "#3D535D",
     completedColor = "#7D4479")
   
-
+data_exploring_map
 
 
 # Shiny -------------------------------------------------------------------
