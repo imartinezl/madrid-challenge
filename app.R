@@ -5,23 +5,39 @@ library(dplyr)
 library(zeallot)
 
 # Data Importation --------------------------------------------------------
+count.na <- function(df){
+  round(apply(df,2,function(i){sum(!is.na(i))})/nrow(df),2)
+}
 
 # Contenedores Aceite
 data_contenedores_aceite <- read.csv('data/RecogidaContenedoresAceiteUsado.csv', sep = ";",  dec = ",", stringsAsFactors = F) %>% 
-  dplyr::mutate(LABEL = paste("<b>Dirección:</b> ", DIRECCION_COMPLETA, "<br/><b>Centro:<b>", CENTRO, 
-                              "<br/><b>Horario:<b>", HORARIO, ", ", OBSERVACIONES))
+  dplyr::mutate(OBSERVACIONES = ifelse(nchar(OBSERVACIONES)>1, OBSERVACIONES, NA),
+                LABEL = paste("<b>Dirección:</b> ", DIRECCION_COMPLETA, 
+                              "<br/><b>Centro:</b>", CENTRO, 
+                              "<br/><b>Horario:</b>", HORARIO, ifelse(!is.na(OBSERVACIONES), paste(", ", OBSERVACIONES), "") ))
 
 # Contenedores Ropa
 data_contenedores_ropa <- read.csv('data/ContenedoresRopa.csv', sep = ";", dec = ",", stringsAsFactors = F) %>% 
   dplyr::mutate(LONGITUD = as.numeric(sub("\\s", "", LONGITUD)),
                 LATITUD = as.numeric(sub("\\s", "", LATITUD)),
-                LABEL = paste("<b>Dirección:</b> ", DIRECCION_COMPLETA, "<br/><b>Centro:<b>", CENTRO, 
-                              "<br/><b>Horario:<b>", HORARIO) )
+                CENTRO = ifelse(nchar(CENTRO)>1, CENTRO, NA),
+                HORARIO = ifelse(nchar(HORARIO)>1, HORARIO, NA),
+                LABEL = paste("<b>Dirección:</b> ", DIRECCION_COMPLETA, 
+                              ifelse(!is.na(CENTRO), paste("<br/><b>Centro:</b>", CENTRO), ""),
+                              ifelse(!is.na(HORARIO), paste("<br/><b>Horario:</b>", HORARIO), "") ))
 
 # Contenedores Pilas
 data_contenedores_pilas <- read.csv('data/Marquesinas_contenedores_pilas_2017.csv', sep = ";",  dec = ",", stringsAsFactors = F) %>% 
   dplyr::mutate(LONGITUD = as.numeric(sub("\\s", "", Longitud)),
-                LATITUD = as.numeric(sub("\\s", "", Latitud)) )
+                LATITUD = as.numeric(sub("\\s", "", Latitud)),
+                VIAL = ifelse(nchar(VIAL)>1, stringr::str_to_title(VIAL), NA),
+                Nº = ifelse(nchar(Nº)>1, stringr::str_to_title(Nº), NA),
+                DIRECCIÓN = ifelse(nchar(DIRECCIÓN)>1, stringr::str_to_title(DIRECCIÓN), NA),
+                emplazamiento = ifelse(nchar(emplazamiento)>1, stringr::str_to_title(emplazamiento), NA),
+                sentido = ifelse(nchar(sentido)>1, stringr::str_to_title(sentido), NA),
+                LABEL = paste0("<b>Dirección:</b> ", ifelse(!is.na(VIAL), VIAL, ""), " ", DIRECCIÓN, " ", ifelse(!is.na(Nº), Nº, ""), 
+                               ifelse(!is.na(emplazamiento), paste("</br><b>Emplazamiento:</b>", emplazamiento), ""), 
+                               ifelse(!is.na(sentido), paste("</br><b>Sentido:</b>", sentido), "")))
 
 # Contenedores Varios
 data_contenedores_varios <- read.csv('data/Contenedores_varios.csv', sep = ";", dec = ",",stringsAsFactors = F)
@@ -67,7 +83,7 @@ icons <- leaflet::awesomeIcons(
 icon_contenedores_aceite <- leaflet::makeIcon( iconUrl = "icons/oil.png", iconWidth = 15, iconHeight = 15)
 icon_contenedores_ropa <- leaflet::makeIcon( iconUrl = "icons/clothing-hanger.png", iconWidth = 15, iconHeight = 15)
 icon_contenedores_pilas <- leaflet::makeIcon( iconUrl = "icons/battery.png", iconWidth = 15, iconHeight = 15)
-icon_contenedores_vidrio <- leaflet::makeIcon( iconUrl = "icons/battery.png", iconWidth = 15, iconHeight = 15)
+icon_contenedores_vidrio <- leaflet::makeIcon( iconUrl = "icons/glass-container.png", iconWidth = 15, iconHeight = 15)
 
 data_exploring_map <- leaflet::leaflet(options = leaflet::leafletOptions(minZoom = 0, maxZoom = 18)) %>% 
   # leaflet::addTiles() %>%
@@ -76,7 +92,8 @@ data_exploring_map <- leaflet::leaflet(options = leaflet::leafletOptions(minZoom
                       icon = icon_contenedores_aceite, label = ~lapply(LABEL, HTML)) %>%
   leaflet::addMarkers(data = data_contenedores_ropa, lat = ~ LATITUD, lng = ~ LONGITUD, group = "Contenedores Ropa", 
                       icon = icon_contenedores_ropa, label = ~lapply(LABEL, HTML)) %>%
-  leaflet::addCircles(data = data_contenedores_pilas, lat = ~ LATITUD, lng = ~ LONGITUD, group = "Contenedores Pilas") %>%
+  leaflet::addMarkers(data = data_contenedores_pilas, lat = ~ LATITUD, lng = ~ LONGITUD, group = "Contenedores Pilas",
+                      icon = icon_contenedores_pilas, label = ~lapply(LABEL, HTML)) %>%
   # leaflet::addCircles(data = data_contenedores_varios, lat = ~ LATITUD, lng = ~ LONGITUD, group = "Contenedores Varios") %>%
   leaflet::addCircles(data = data_contenedores_vidrio, lat = ~ LATITUD, lng = ~ LONGITUD, group = "Contenedores Vidrio") %>%
   leaflet::addCircles(data = data_puntos_limpios_fijos, lat = ~ LATITUD, lng = ~ LONGITUD, group = "Puntos Limpios Fijos") %>%
