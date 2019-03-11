@@ -24,13 +24,10 @@ points <- data_contenedores_vidrio %>%
   dplyr::select(LONGITUD, LATITUD) %>% 
   plyr::rename(c("LONGITUD"="longitude", "LATITUD"="latitude"))
 
-i <- 1
-j <- 2
-waypoint0 <- paste0(points$latitude[i],',',points$longitude[i])
-waypoint1 <- paste0(points$latitude[j],',',points$longitude[j])
-mode <- "fastest;truck;traffic:disabled"
 
-get.route <- function(waypoint0, waypoint1, mode){
+# Route Request -----------------------------------------------------------
+
+route.request <- function(waypoint0, waypoint1, mode){
   base <- "https://route.api.here.com/routing/7.2/"
   endpoint <- "calculateroute.json"
   app_id <- Sys.getenv("HERE_APP_ID")
@@ -41,7 +38,7 @@ get.route <- function(waypoint0, waypoint1, mode){
                 "&mode=", mode)
   tryCatch({
     r <- httr::GET(url)
-    httr::stop_for_status(response)
+    httr::stop_for_status(r)
     content <- jsonlite::fromJSON(httr::content(r, as="text"))
     return(content)
   }, http_error=function(e) {
@@ -49,7 +46,7 @@ get.route <- function(waypoint0, waypoint1, mode){
     warning(paste0("HTTP error ", e))
   })
 }
-extract.route.info <- function(content){
+route.info <- function(content){
   distance <- content$response$route$summary$distance
   traffic_time <- content$response$route$summary$trafficTime
   base_time <- content$response$route$summary$baseTime
@@ -64,10 +61,23 @@ extract.route.info <- function(content){
   
   data.frame(distance, traffic_time, base_time, route_lat, route_long,
              route_dist, route_time, start_street_side, start_street_name, 
-             stop_street_side, stop_street_name)
+             stop_street_side, stop_street_name, stringsAsFactors = F)
+}
+route.calc <- function(i,j, points){
+  waypoint0 <- paste0(points$latitude[i],',',points$longitude[i])
+  waypoint1 <- paste0(points$latitude[j],',',points$longitude[j])
+  mode <- "fastest;truck;traffic:disabled"
+  route.request(waypoint0, waypoint1, mode) %>% route.info()
 }
 
-d <- get.route(waypoint0, waypoint1, mode) %>% extract.route.info()
-data.frame(i,j) %>% 
-  cbind(d)
+# Route Download
+n <- nrow(points)
+routes <- expand.grid(i=1:n, j=1:n) %>% 
+  pbapply::pbapply(1,function(x){
+    x <- as.list(x)
+    i <- x$i; j <- x$j;
+    if(i!=j){
+      data.frame(i,j,route.calc(i,j,points), stringsAsFactors = F)
+    }
+  }) %>% dplyr::bind_rows()
 
