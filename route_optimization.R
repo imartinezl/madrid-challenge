@@ -81,3 +81,9 @@ routes <- expand.grid(i=1:n, j=1:n) %>%
     }
   }) %>% dplyr::bind_rows()
 
+
+routes %>% 
+  tidyr::gather(key,value,distance,traffic_time,base_time) %>% 
+  ggplot2::ggplot()+
+  ggplot2::geom_histogram(ggplot2::aes(x=value,fill=key))+
+  ggplot2::facet_grid(cols=vars(key),scales="free")
