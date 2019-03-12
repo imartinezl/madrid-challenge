@@ -87,3 +87,39 @@ routes %>%
   ggplot2::ggplot()+
   ggplot2::geom_histogram(ggplot2::aes(x=value,fill=key))+
   ggplot2::facet_grid(cols=vars(key),scales="free")
+
+# https://www.r-bloggers.com/travelling-salesman-with-ggmap/
+
+
+## Set the coefficients of the decision variables -> C
+C <- c(30, 40, 80)
+
+# Create constraint martix B
+A <- matrix(c(1, 1, -10,
+              4, 3, -20,
+              1, 0, -2,
+              1, 1, 0), nrow=4, byrow=TRUE)
+
+# Right hand side for the constraints
+B <- c(500, 200, 100, 1000)
+
+# Direction of the constraints
+constranints_direction  <- c("<=", "<=", "<=", ">=")
+
+# Find the optimal solution
+optimum <-  lpSolve::lp(direction="min",
+               objective.in = C,
+               const.mat = A,
+               const.dir = constranints_direction,
+               const.rhs = B,
+               all.int = T)
+
+# Print status: 0 = success, 2 = no feasible solution
+print(optimum$status)
+# Display the optimum values for x_4p, x_3p and x_w
+best_sol <- optimum$solution
+names(best_sol) <- c("x_4p", "x_3p", "x_w") 
+print(best_sol)
+
+# Check the value of objective function at optimal point
+print(paste("Total cost: ", optimum$objval, sep=""))
