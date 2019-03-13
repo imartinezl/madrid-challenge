@@ -72,7 +72,7 @@ route.calc <- function(i,j, points){
 
 # Route Download
 n <- nrow(points)
-routes.coords <- expand.grid(i=1:n, j=1:n) %>% 
+routes_coords <- expand.grid(i=1:n, j=1:n) %>% 
   pbapply::pbapply(1,function(x){
     x <- as.list(x)
     i <- x$i; j <- x$j;
@@ -83,13 +83,13 @@ routes.coords <- expand.grid(i=1:n, j=1:n) %>%
   dplyr::mutate(id = 1:n())
 
 
-routes.coords %>% 
+routes_coords %>% 
   tidyr::gather(key,value,distance,traffic_time,base_time) %>% 
   ggplot2::ggplot()+
   ggplot2::geom_histogram(ggplot2::aes(x=value,fill=key))+
   ggplot2::facet_grid(cols=vars(key),scales="free")
 
-routes <- routes.coords %>% 
+routes <- routes_coords %>% 
   dplyr::select(i,j,traffic_time) %>% 
   unique()
 
@@ -107,10 +107,13 @@ atsp <- TSP::ATSP(dist.mat)
 tour <- TSP::solve_TSP(atsp)
 tour
 
-solution <- as.integer(tour)
-
-data.frame(i=solution, j=lead(solution,1)) %>% 
+solution <- data.frame(i=as.integer(tour), j=lead(as.integer(tour),1)) %>% 
   na.omit()
+
+merge(solution, routes_coords, by=c("i","j"), sort=F) %>% 
+  ggplot2::ggplot()+
+  ggplot2::geom_path(ggplot2::aes(x=route_lat, y=route_long))+
+  ggplot2::geom_point(data=points, ggplot2::aes(x=latitude, y=longitude))
 
 
 
