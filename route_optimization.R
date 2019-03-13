@@ -108,12 +108,16 @@ tour <- TSP::solve_TSP(atsp)
 tour
 
 solution <- data.frame(i=as.integer(tour), j=lead(as.integer(tour),1)) %>% 
-  na.omit()
+  na.omit() %>% 
+  dplyr::mutate(trip_id = 1:n())
 
-merge(solution, routes_coords, by=c("i","j"), sort=F) %>% 
+merge(solution, routes_coords, by=c("i","j"), sort=F) %>%
   ggplot2::ggplot()+
-  ggplot2::geom_path(ggplot2::aes(x=route_lat, y=route_long))+
-  ggplot2::geom_point(data=points, ggplot2::aes(x=latitude, y=longitude))
+  ggplot2::geom_point(ggplot2::aes(x=route_long, y=route_lat))+
+  ggplot2::geom_path(ggplot2::aes(x=route_long, y=route_lat, color=factor(trip_id)))+
+  ggplot2::geom_point(data=points, ggplot2::aes(x=longitude, y=latitude), color="red")
+
+
 
 
 
