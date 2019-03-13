@@ -72,47 +72,59 @@ route.calc <- function(i,j, points){
 
 # Route Download
 n <- nrow(points)
-routes <- expand.grid(i=1:n, j=1:n) %>% 
+routes.coords <- expand.grid(i=1:n, j=1:n) %>% 
   pbapply::pbapply(1,function(x){
     x <- as.list(x)
     i <- x$i; j <- x$j;
     if(i!=j){
       data.frame(i,j,route.calc(i,j,points), stringsAsFactors = F)
     }
-  }) %>% dplyr::bind_rows()
+  }) %>% dplyr::bind_rows() %>% 
+  dplyr::mutate(id = 1:n())
 
 
-routes %>% 
+routes.coords %>% 
   tidyr::gather(key,value,distance,traffic_time,base_time) %>% 
   ggplot2::ggplot()+
   ggplot2::geom_histogram(ggplot2::aes(x=value,fill=key))+
   ggplot2::facet_grid(cols=vars(key),scales="free")
 
-# https://www.r-bloggers.com/travelling-salesman-with-ggmap/
+routes <- routes.coords %>% 
+  dplyr::select(i,j,traffic_time) %>% 
+  unique()
+
+nvar <- nrow(routes)
+nconstraint <- n
+
+dist.mat <- matrix(0, nrow = n, ncol = n)
+for(x in 1:nvar){
+  dist.mat[routes$i[x],routes$j[x]] <- routes$traffic_time[x]
+}
+image(dist.mat)
 
 
-## Set the coefficients of the decision variables -> C
-C <- c(30, 40, 80)
+atsp <- TSP::ATSP(dist.mat)
+tour <- TSP::solve_TSP(atsp)
+tour
 
-# Create constraint martix B
-A <- matrix(c(1, 1, -10,
-              4, 3, -20,
-              1, 0, -2,
-              1, 1, 0), nrow=4, byrow=TRUE)
+solution <- as.integer(tour)
 
-# Right hand side for the constraints
-B <- c(500, 200, 100, 1000)
+data.frame(i=solution, j=lead(solution,1)) %>% 
+  na.omit()
 
-# Direction of the constraints
-constranints_direction  <- c("<=", "<=", "<=", ">=")
+
+
+objective.in <- routes$traffic_time
+const.rhs <- rep(1,nconstraint)
+const.dir  <- rep("==", nconstraint)
 
 # Find the optimal solution
 optimum <-  lpSolve::lp(direction="min",
-               objective.in = C,
-               const.mat = A,
-               const.dir = constranints_direction,
-               const.rhs = B,
-               all.int = T)
+                        objective.in = objective.in,
+                        const.mat = const.mat,
+                        const.dir = const.dir,
+                        const.rhs = const.rhs,
+                        all.int = T)
 
 # Print status: 0 = success, 2 = no feasible solution
 print(optimum$status)
