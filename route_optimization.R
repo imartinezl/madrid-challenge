@@ -72,7 +72,19 @@ route.calc <- function(i,j, points){
 
 # Route Download
 n <- nrow(points)
+nneighbors <- 5
 routes_coords <- expand.grid(i=1:n, j=1:n) %>% 
+  apply(1,function(x){
+    x <- as.list(x)
+    i <- x$i; j <- x$j;
+    if(i!=j){
+      distance <- geosphere::distm(points[i,], points[j,], fun = geosphere::distHaversine)
+      data.frame(i,j,distance, stringsAsFactors = F)
+    }
+  }) %>% 
+  dplyr::bind_rows() %>% 
+  dplyr::group_by(i) %>% 
+  dplyr::top_n(n = nneighbors, wt = 1/distance) %>% 
   pbapply::pbapply(1,function(x){
     x <- as.list(x)
     i <- x$i; j <- x$j;
@@ -82,11 +94,11 @@ routes_coords <- expand.grid(i=1:n, j=1:n) %>%
   }) %>% dplyr::bind_rows(.id = "route_id") %>% 
   dplyr::mutate(step_id = 1:n())
 
-routes_coords %>% 
-  tidyr::gather(key,value,distance,traffic_time,base_time) %>% 
-  ggplot2::ggplot() +
-  ggplot2::geom_histogram(ggplot2::aes(x=value,fill=key)) +
-  ggplot2::facet_grid(cols=vars(key),scales="free")
+# routes_coords %>% 
+#   tidyr::gather(key,value,distance,traffic_time,base_time) %>% 
+#   ggplot2::ggplot() +
+#   ggplot2::geom_histogram(ggplot2::aes(x=value,fill=key)) +
+#   ggplot2::facet_grid(cols=vars(key),scales="free")
 
 ggplot2::ggplot()+
   ggplot2::geom_path(data = routes_coords, ggplot2::aes(x=route_long,y=route_lat, group=factor(route_id), color=factor(i)))+
@@ -100,13 +112,17 @@ routes <- routes_coords %>%
 nvar <- nrow(routes)
 nconstraint <- n
 
-distance_matrix <- matrix(0, nrow = n, ncol = n)
+distance_matrix <- matrix(Inf, nrow = n, ncol = n)
+diag(distance_matrix) <- 0
 for(x in 1:nvar){
   distance_matrix[routes$i[x],routes$j[x]] <- routes$traffic_time[x]
 }
 image(distance_matrix)
 
 
+# TSP Package -------------------------------------------------------------
+
+# Nearest, farthest, cheapest and arbitrary insertion algorithms
 atsp <- TSP::ATSP(distance_matrix)
 tour <- TSP::solve_TSP(x = atsp, method="arbitrary_insertion")
 as.integer(tour)
@@ -126,7 +142,7 @@ plot.tour(tour, routes_coords)
 
 
 
-# SIMULATED ANNEALING -----------------------------------------------------
+# Simulated Annealing -----------------------------------------------------
 
 calculate_tour_distance <- function(tour, distance_matrix) {
   sum(distance_matrix[embed(c(tour, tour[1]), 2)])
@@ -184,7 +200,7 @@ s_curve_width <- 3000
 
 number_of_loops <- ceiling(total_iterations / plot_every_iterations)
 distances <- rep(NA, number_of_loops)
-plot.tour(intermediate_results$tour, routes_coords)
+plot.tour(tour, routes_coords)
 
 for(i in 1:number_of_loops){
   intermediate_results <- run_intermediate_annealing_process(points, distance_matrix, tour, tour_distance, best_tour, best_distance,
@@ -207,7 +223,7 @@ plot.tour(best_tour, routes_coords)
 
 
 
-# LINEAR PROGRAMMING ----------------------------------------------------------------
+# Linear Programming Problem ----------------------------------------------------------------
 
 objective.in <- routes$traffic_time
 const.rhs <- rep(1,nconstraint)
