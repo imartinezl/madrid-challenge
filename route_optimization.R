@@ -79,47 +79,56 @@ routes_coords <- expand.grid(i=1:n, j=1:n) %>%
     if(i!=j){
       data.frame(i,j,route.calc(i,j,points), stringsAsFactors = F)
     }
-  }) %>% dplyr::bind_rows() %>% 
-  dplyr::mutate(id = 1:n())
-
+  }) %>% dplyr::bind_rows(.id = "route_id") %>% 
+  dplyr::mutate(step_id = 1:n())
 
 routes_coords %>% 
   tidyr::gather(key,value,distance,traffic_time,base_time) %>% 
-  ggplot2::ggplot()+
-  ggplot2::geom_histogram(ggplot2::aes(x=value,fill=key))+
+  ggplot2::ggplot() +
+  ggplot2::geom_histogram(ggplot2::aes(x=value,fill=key)) +
   ggplot2::facet_grid(cols=vars(key),scales="free")
 
+ggplot2::ggplot()+
+  ggplot2::geom_path(data = routes_coords, ggplot2::aes(x=route_long,y=route_lat, group=factor(route_id), color=factor(i)))+
+  ggplot2::geom_label(data = points %>% dplyr::mutate(point_id=1:n()),
+                      ggplot2::aes(x=longitude, y=latitude, label=point_id),size=5)
+
 routes <- routes_coords %>% 
-  dplyr::select(i,j,traffic_time) %>% 
+  dplyr::select(route_id,i,j,traffic_time,base_time,distance) %>% 
   unique()
 
 nvar <- nrow(routes)
 nconstraint <- n
 
-dist.mat <- matrix(0, nrow = n, ncol = n)
+distance_matrix <- matrix(0, nrow = n, ncol = n)
 for(x in 1:nvar){
-  dist.mat[routes$i[x],routes$j[x]] <- routes$traffic_time[x]
+  distance_matrix[routes$i[x],routes$j[x]] <- routes$traffic_time[x]
 }
-image(dist.mat)
+image(distance_matrix)
 
 
-atsp <- TSP::ATSP(dist.mat)
-tour <- TSP::solve_TSP(atsp)
-tour
+atsp <- TSP::ATSP(distance_matrix)
+tour <- TSP::solve_TSP(x = atsp, method="arbitrary_insertion")
+as.integer(tour)
 
-solution <- data.frame(i=as.integer(tour), j=lead(as.integer(tour),1)) %>% 
-  na.omit() %>% 
-  dplyr::mutate(trip_id = 1:n())
+plot.tour <- function(tour, routes_coords){
+  data.frame(i=as.integer(tour), j=lead(as.integer(tour),1)) %>% 
+    na.omit() %>% 
+    dplyr::mutate(solution_id = 1:n()) %>% 
+    merge(routes_coords, by=c("i","j"), all.x = T, sort=F) %>% 
+    dplyr::arrange(solution_id, step_id) %>% 
+    ggplot2::ggplot()+
+    ggplot2::geom_path(ggplot2::aes(x=route_long, y=route_lat, group=factor(route_id), color=factor(solution_id)))+
+    ggplot2::geom_point(ggplot2::aes(x=route_long, y=route_lat))+
+    ggplot2::geom_point(data=points, ggplot2::aes(x=longitude, y=latitude), size=3, color="red")
+}
+plot.tour(tour, routes_coords)
 
-merge(solution, routes_coords, by=c("i","j"), sort=F) %>%
-  ggplot2::ggplot()+
-  ggplot2::geom_point(ggplot2::aes(x=route_long, y=route_lat))+
-  ggplot2::geom_path(ggplot2::aes(x=route_long, y=route_lat, color=factor(trip_id)))+
-  ggplot2::geom_point(data=points, ggplot2::aes(x=longitude, y=latitude), color="red")
 
 
 
 
+# LINEAR PROGRAMMING ----------------------------------------------------------------
 
 objective.in <- routes$traffic_time
 const.rhs <- rep(1,nconstraint)
