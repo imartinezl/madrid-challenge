@@ -2,6 +2,7 @@
 .Renviron
 .Rhistory
 .Rproj.user
+.Rdata
 rsconnect/*
 packrat/lib*/
 packrat/src/*
