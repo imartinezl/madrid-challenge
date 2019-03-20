@@ -72,7 +72,7 @@ route.calc <- function(i,j, points){
 
 # Route Download
 n <- nrow(points)
-nneighbors <- 5
+nneighbors <- 2
 routes_coords <- expand.grid(i=1:n, j=1:n) %>% 
   apply(1,function(x){
     x <- as.list(x)
