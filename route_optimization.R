@@ -107,7 +107,8 @@ ggplot2::ggplot()+
 
 routes <- routes_coords %>% 
   dplyr::select(route_id,i,j,traffic_time,base_time,distance) %>% 
-  unique()
+  unique() %>% 
+  dplyr::arrange(i)
 
 nvar <- nrow(routes)
 nconstraint <- n
