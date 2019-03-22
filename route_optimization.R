@@ -78,7 +78,7 @@ routes_coords <- expand.grid(i=1:n, j=1:n) %>%
     x <- as.list(x)
     i <- x$i; j <- x$j;
     if(i!=j){
-      distance <- geosphere::distm(points[i,], points[j,], fun = geosphere::distHaversine)
+      distance <- geosphere::distm(points[i,], points[j,], fun = geosphere::distHaversine) # calculate distance from points
       data.frame(i,j,distance, stringsAsFactors = F)
     }
   }) %>% 
@@ -113,13 +113,13 @@ routes <- routes_coords %>%
 nvar <- nrow(routes)
 nconstraint <- n
 
-distance_matrix <- matrix(Inf, nrow = n, ncol = n)
+distance_matrix <- matrix(1e10, nrow = n, ncol = n)
 diag(distance_matrix) <- 0
 for(x in 1:nvar){
   distance_matrix[routes$i[x],routes$j[x]] <- routes$traffic_time[x]
 }
 image(distance_matrix)
-
+distance_matrix
 
 # TSP Package -------------------------------------------------------------
 
@@ -247,3 +247,11 @@ print(best_sol)
 
 # Check the value of objective function at optimal point
 print(paste("Total cost: ", optimum$objval, sep=""))
+
+
+
+# Define Problem Objective ------------------------------------------------
+
+# what is the solution we want to get?
+# Is it a circular path to visit every node, or just the shortest path to visit all the nodes?
+
