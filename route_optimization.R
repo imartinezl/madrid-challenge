@@ -72,7 +72,7 @@ route.calc <- function(i,j, points){
 
 # Route Download
 n <- nrow(points)
-nneighbors <- 2
+nneighbors <- 6
 routes_coords <- expand.grid(i=1:n, j=1:n) %>% 
   apply(1,function(x){
     x <- as.list(x)
@@ -113,7 +113,7 @@ routes <- routes_coords %>%
 nvar <- nrow(routes)
 nconstraint <- n
 
-distance_matrix <- matrix(1e10, nrow = n, ncol = n)
+distance_matrix <- matrix(Inf, nrow = n, ncol = n)
 diag(distance_matrix) <- 0
 for(x in 1:nvar){
   distance_matrix[routes$i[x],routes$j[x]] <- routes$traffic_time[x]
@@ -249,6 +249,32 @@ print(best_sol)
 print(paste("Total cost: ", optimum$objval, sep=""))
 
 
+# Dijkstra Algorithm for Shortest Path Tree ------------------------------------
+
+spt <- optrees::getShortestPathTree(nodes = 1:10, 
+                                    arcs = routes %>% dplyr::select(i,j,traffic_time) %>% as.matrix(),
+                                    algorithm = "Dijkstra", directed=F, check.graph = T)
+spt$tree.arcs
+plot.tour(spt$tree.nodes, routes_coords)
+
+mst <- optrees::getMinimumSpanningTree(nodes = 1:10, 
+                                       arcs = routes %>% dplyr::select(i,j,traffic_time) %>% as.matrix(),
+                                       algorithm = "Prim", check.graph = T)
+mst$tree.arcs
+plot.tour(mst$tree.nodes, routes_coords)
+
+mct <- optrees::getMinimumCutTree(nodes = 1:10, 
+                                  arcs = routes %>% dplyr::select(i,j,traffic_time) %>% as.matrix(),
+                                  check.graph = T)
+mct$tree.arcs
+plot.tour(mct$tree.nodes, routes_coords)
+
+
+mab <- optrees::getMinimumArborescence(nodes = 1:10,
+                                       arcs = routes %>% dplyr::select(i,j,traffic_time) %>% as.matrix(),
+                                       check.graph = T)
+mab$tree.arcs
+plot.tour(mab$tree.nodes, routes_coords)
 
 # Define Problem Objective ------------------------------------------------
 
