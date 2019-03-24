@@ -72,7 +72,7 @@ route.calc <- function(i,j, points){
 
 # Route Download
 n <- nrow(points)
-nneighbors <- 6
+nneighbors <- 8
 routes_coords <- expand.grid(i=1:n, j=1:n) %>% 
   apply(1,function(x){
     x <- as.list(x)
@@ -113,7 +113,7 @@ routes <- routes_coords %>%
 nvar <- nrow(routes)
 nconstraint <- n
 
-distance_matrix <- matrix(Inf, nrow = n, ncol = n)
+distance_matrix <- matrix(1e9, nrow = n, ncol = n)
 diag(distance_matrix) <- 0
 for(x in 1:nvar){
   distance_matrix[routes$i[x],routes$j[x]] <- routes$traffic_time[x]
@@ -281,3 +281,28 @@ plot.tour(mab$tree.nodes, routes_coords)
 # what is the solution we want to get?
 # Is it a circular path to visit every node, or just the shortest path to visit all the nodes?
 
+
+# Check cycles ------------------------------------------------------------
+
+a <- expand.grid(i=1:n, j=1:n) %>% 
+  apply(1,function(x){
+    x <- as.list(x)
+    i <- x$i; j <- x$j;
+    if(i!=j){
+      distance <- geosphere::distm(points[i,], points[j,], fun = geosphere::distHaversine) # calculate distance from points
+      data.frame(i,j,distance, stringsAsFactors = F)
+    }
+  }) %>% 
+  dplyr::bind_rows()
+
+
+a <- data.frame(start=c(1,2,3), stop=c(2,3,2))
+g <- igraph::graph.data.frame(a)
+plot(g)
+
+cycles <- t(sapply(1:dim(a)[1], function(x) {
+  v=igraph::graph.motifs.no(g, size=x); 
+  c(x,v)
+  }))
+colnames(cycles) <- c("size","count")
+cycles
