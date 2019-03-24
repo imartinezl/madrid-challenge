@@ -296,13 +296,47 @@ a <- expand.grid(i=1:n, j=1:n) %>%
   dplyr::bind_rows()
 
 
-a <- data.frame(start=c(1,2,3), stop=c(2,3,2))
+a <- data.frame(start=c(0,0,1,2,2,3), stop=c(1,2,2,0,3,3))
+a <- data.frame(start=c(0,2,3), stop=c(1,0,2))
 g <- igraph::graph.data.frame(a)
 plot(g)
 
-cycles <- t(sapply(1:dim(a)[1], function(x) {
-  v=igraph::graph.motifs.no(g, size=x); 
-  c(x,v)
-  }))
-colnames(cycles) <- c("size","count")
-cycles
+# cycles <- t(sapply(1:dim(a)[1], function(x) {
+#   v=igraph::graph.motifs.no(g, size=x); 
+#   c(x,v)
+#   }))
+# colnames(cycles) <- c("size","count")
+# cycles
+
+
+dfs.from.v <- function(g,v){
+  vertex_names <- igraph::vertex.attributes(g)$name
+  # vertex_num <- vertex_names %>% length()
+  vertex <- c()
+  mode <- c()
+  f.in <- function(graph, data, extra) {
+    mode <<- c(mode,"in")
+    vertex <<- c(vertex,vertex_names[data[[1]]+1])
+    # cat("in:", paste(collapse=", ", data), "\n")
+    FALSE
+  }
+  f.out <- function(graph, data, extra) {
+    mode <<- c(mode,"out")
+    vertex <<- c(vertex,vertex_names[data[[1]]+1])
+    # cat("out:", paste(collapse=", ", data), "\n")
+    FALSE
+  }
+  igraph::dfs(g, root=v, neimode="out", in.callback=f.in, out.callback=f.out)
+  complete_graph <- rle(mode)$lengths %>% length() == 2
+  return(complete_graph)
+}
+complete.graph <- function(g){
+  vertex_names <- igraph::vertex.attributes(g)$name
+  for(v in vertex_names){
+    if(dfs.from.v(g,v)){
+      return(T)
+    }
+  }
+  return(F)
+}
+complete.graph(g)
