@@ -72,7 +72,7 @@ route.calc <- function(i,j, points){
 
 # Route Download
 n <- nrow(points)
-nneighbors <- 8
+nneighbors <- 2
 routes_coords <- expand.grid(i=1:n, j=1:n) %>% 
   apply(1,function(x){
     x <- as.list(x)
@@ -340,3 +340,47 @@ complete.graph <- function(g){
   return(F)
 }
 complete.graph(g)
+
+
+# Reduce distance matrix size until graph is incomplete ----------------------------
+
+routes <- expand.grid(i=1:n, j=1:n) %>% 
+  apply(1,function(x){
+    x <- as.list(x)
+    i <- x$i; j <- x$j;
+    if(i!=j){
+      distance <- geosphere::distm(points[i,], points[j,], fun = geosphere::distHaversine) # calculate distance from points
+      data.frame(i,j,distance, stringsAsFactors = F)
+    }
+  }) %>% 
+  dplyr::bind_rows() %>% 
+  dplyr::mutate(belong = T) %>% 
+  dplyr::arrange(-distance)
+
+g <- igraph::graph.data.frame(routes %>% dplyr::filter(belong))
+if(!complete.graph(g)){
+  stop("WFT!, Initial graph is not complete")
+}
+nneighbors <- 5
+for (e in 1:nrow(routes)) {
+  routes$belong[e] <- F
+  few_neighbors <- routes %>% 
+    dplyr::filter(belong) %>% 
+    dplyr::group_by(i) %>% 
+    dplyr::summarise(neighbors = n()) %>% 
+    dplyr::mutate(few = neighbors < nneighbors) %>% 
+    dplyr::pull(few) %>% 
+    any()
+  if(few_neighbors){
+    routes$belong[e] <- T
+    next()
+  }
+  g <- igraph::graph.data.frame(a %>% dplyr::filter(belong))
+  if(!complete.graph(g)){
+    routes$belong[e] <- T
+  }
+}
+plot(g)
+complete.graph(g)
+
+routes_fil <- routes %>% dplyr::filter(belong) %>% dplyr::select(i,j,distance)
