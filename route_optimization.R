@@ -106,6 +106,7 @@ complete.graph <- function(g){
 
 # Reduce graph connectivity -----------------------------------------------
 
+n <- nrow(points)
 routes <- expand.grid(i=1:n, j=1:n) %>% 
   apply(1,function(x){
     x <- as.list(x)
@@ -137,7 +138,7 @@ for (e in 1:nrow(routes)) {
     routes$belong[e] <- T
     next()
   }
-  g <- igraph::graph.data.frame(a %>% dplyr::filter(belong))
+  g <- igraph::graph.data.frame(routes %>% dplyr::filter(belong))
   if(!complete.graph(g)){
     routes$belong[e] <- T
   }
@@ -146,8 +147,6 @@ plot(g)
 complete.graph(g)
 
 # Route Download
-n <- nrow(points)
-
 routes_coords <- routes %>% 
   dplyr::filter(belong) %>% 
   dplyr::select(i,j,distance) %>% 
@@ -203,7 +202,7 @@ nvar <- nrow(routes)
 nconstraint <- n
 
 distance_matrix <- matrix(1e9, nrow = n, ncol = n)
-diag(distance_matrix) <- 0
+diag(distance_matrix) <- 1e9
 for(x in 1:nvar){
   distance_matrix[routes$i[x],routes$j[x]] <- routes$traffic_time[x]
 }
@@ -215,7 +214,9 @@ distance_matrix
 # Nearest, farthest, cheapest and arbitrary insertion algorithms
 atsp <- TSP::ATSP(distance_matrix)
 tour <- TSP::solve_TSP(x = atsp, method="arbitrary_insertion")
+tour <- TSP::solve_TSP(x = atsp, method="nearest_insertion")
 as.integer(tour)
+tour
 
 plot.tour <- function(tour, routes_coords){
   data.frame(i=as.integer(tour), j=lead(as.integer(tour),1)) %>% 
@@ -338,6 +339,59 @@ print(best_sol)
 print(paste("Total cost: ", optimum$objval, sep=""))
 
 
+# New LP TSP Function ------------------------------------------------------
+
+tspsolve <- function(x){
+  diag(x)<-1e10
+  ## define some basic constants
+  nx<-nrow(x)
+  lx<-length(x)
+  objective<-matrix(x,lx,nx)
+  rowNum<-rep(row(x),nx)
+  colNum<-rep(col(x),nx)
+  stepNum<-rep(1:nx,each=lx)
+  
+  ## these constraints ensure that at most one edge is traversed each step
+  onePerStep.con<-do.call(cbind,lapply(1:nx,function(i) 1*(stepNum==i)))
+  onePerRow.rhs<-rep(1,nx)
+  
+  ## these constraints ensure that each vertex is visited exactly once
+  onceEach.con<-do.call(cbind,lapply(1:nx,function(i) 1*(rowNum==i)))
+  onceEach.rhs<-rep(1,nx)
+  
+  ## these constraints ensure that the start point of the i'th edge
+  ## is equal to the endpoint of the (i-1)'st edge
+  edge.con<-c()
+  for(s in 1:nx){
+    s1<-(s %% nx)+1    
+    stepMask<-(stepNum == s)*1
+    nextStepMask<- -(stepNum== s1)
+    for(i in 1:nx){        
+      edge.con<-cbind(edge.con,stepMask * (colNum==i) + nextStepMask*(rowNum==i))
+    }
+  }
+  edge.rhs<-rep(0,ncol(edge.con))
+  
+  ## now bind all the constraints together, along with right-hand sides, and signs
+  constraints<-cbind(onePerStep.con,onceEach.con,edge.con)
+  rhs<-c(onePerRow.rhs,onceEach.rhs,edge.rhs)
+  signs<-rep("==",length(rhs))
+  list(constraints,rhs)
+  
+  ## call the lp solver
+  res <- lpSolve::lp("min",objective,constraints,signs,rhs,transpose=F,all.bin=T)
+  
+  ## print the output of lp
+  print(res)
+  
+  ## return the results as a sequence of vertices, and the score = total cycle length
+  list(cycle=colNum[res$solution==1],score=res$objval)
+}
+set.seed(123)
+x<-matrix(c(0,2,1e10, 1,0,2, 2,3,0),byrow = T,c(3,3))
+tspsolve(x)
+tspsolve(distance_matrix)
+
 # Dijkstra Algorithm for Shortest Path Tree ------------------------------------
 
 spt <- optrees::getShortestPathTree(nodes = 1:10, 
@@ -396,13 +450,3 @@ plot(g)
 #   }))
 # colnames(cycles) <- c("size","count")
 # cycles
-
-
-
-
-
-# Reduce distance matrix size until graph is incomplete ----------------------------
-
-
-
-
