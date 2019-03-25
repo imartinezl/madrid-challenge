@@ -20,7 +20,7 @@ data_contenedores_vidrio <- read.csv('data/Contenedores_vidrio_con_publicidad.cs
                 LABEL = paste0("<b>Dirección:</b> ", Nombre))
 
 points <- data_contenedores_vidrio %>% 
-  dplyr::slice(1:100) %>% 
+  dplyr::slice(1:30) %>% 
   dplyr::select(LONGITUD, LATITUD) %>% 
   plyr::rename(c("LONGITUD"="longitude", "LATITUD"="latitude"))
 
@@ -107,50 +107,56 @@ complete.graph <- function(g){
 # Reduce graph connectivity -----------------------------------------------
 
 n <- nrow(points)
-routes <- geosphere::distm(points, points, fun = geosphere::distHaversine) %>%
+edges <- geosphere::distm(points, points, fun = geosphere::distHaversine) %>%
   reshape2::melt(varnames = c("i", "j"), value.name = "distance") %>% 
   dplyr::filter(distance > 0) %>% 
   dplyr::mutate(belong = T) %>% 
   dplyr::arrange(-distance)
-g <- igraph::graph.data.frame(routes %>% dplyr::filter(belong))
+g <- igraph::graph.data.frame(edges %>% dplyr::filter(belong))
 if(!complete.graph(g)){
   stop("WFT!, Initial graph is not complete")
 }
 nneighbors <- 7
-neighbors <- routes %>% 
+neighbors <- edges %>% 
   dplyr::filter(belong) %>% 
   dplyr::group_by(i) %>% 
   dplyr::summarise(n = n())
-for (e in 1:200) {
+for (e in 1:nrow(edges)) {
   if(e %% 10 == 0){print(e)}
-  if(neighbors$n[routes$i[e]] > nneighbors){
-    routes$belong[e] <- F
-    # g <- igraph::graph.data.frame(routes %>% dplyr::filter(belong))
-    g <- igraph::delete.edges(g,routes[e,c('i','j')])
+  if(neighbors$n[edges$i[e]] > nneighbors){
+    edges$belong[e] <- F
+    # g <- igraph::graph.data.frame(edges %>% dplyr::filter(belong))
+    g <- igraph::delete.edges(g,edges[e,c('i','j')])
     if(!complete.graph(g)){
-      routes$belong[e] <- T
-      g <- igraph::add.edges(g,routes[e,c('i','j')])
+      edges$belong[e] <- T
+      g <- igraph::add.edges(g,edges[e,c('i','j')])
       next()
     }
-    neighbors$n[routes$i[e]] <- neighbors$n[routes$i[e]] - 1
+    neighbors$n[edges$i[e]] <- neighbors$n[edges$i[e]] - 1
   }
 }
 plot(g)
 complete.graph(g)
 
 # Route Download
-routes_coords <- routes %>% 
-  dplyr::filter(belong) %>% 
-  dplyr::select(i,j,distance) %>% 
-  pbapply::pbapply(1,function(x){
-    x <- as.list(x)
-    i <- x$i; j <- x$j;
-    if(i!=j){
-      data.frame(i,j,route.calc(i,j,points), stringsAsFactors = F)
-    }
-  }) %>% dplyr::bind_rows(.id = "route_id") %>% 
-  dplyr::mutate(step_id = 1:n())
-
+routes_file <- "routes_backup.csv"
+if(!file.exists(routes_file)){
+  routes_coords <- edges %>% 
+    dplyr::filter(belong) %>% 
+    dplyr::select(i,j,distance) %>% 
+    pbapply::pbapply(1,function(x){
+      x <- as.list(x)
+      i <- x$i; j <- x$j;
+      if(i!=j){
+        data.frame(i,j,route.calc(i,j,points), stringsAsFactors = F)
+      }
+    }) %>% 
+    dplyr::bind_rows(.id = "route_id") %>% 
+    dplyr::mutate(step_id = 1:n())
+  write.csv(routes_coords, routes_file, row.names = F)
+}else{
+  routes_coords <- read.csv(routes_file)
+}
 # routes_coords %>% 
 #   tidyr::gather(key,value,distance,traffic_time,base_time) %>% 
 #   ggplot2::ggplot() +
@@ -217,11 +223,11 @@ plot.tour.map <- function(tour, routes_coords){
     na.omit() %>% 
     dplyr::mutate(solution_id = 1:n(),
                   color=viridis::cividis(n()) %>% substr(1,7)
-                  ) %>% 
+    ) %>% 
     merge(routes_coords, by=c("i","j"), all.x = T, sort=F) %>% 
     dplyr::arrange(solution_id, step_id) %>% 
     dplyr::mutate(label = paste0("From ",i," to ", j))
-
+  
 }
 
 
