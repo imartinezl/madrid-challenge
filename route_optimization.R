@@ -20,7 +20,7 @@ data_contenedores_vidrio <- read.csv('data/Contenedores_vidrio_con_publicidad.cs
                 LABEL = paste0("<b>Dirección:</b> ", Nombre))
 
 points <- data_contenedores_vidrio %>% 
-  dplyr::slice(1:30) %>% 
+  dplyr::slice(1:100) %>% 
   dplyr::select(LONGITUD, LATITUD) %>% 
   plyr::rename(c("LONGITUD"="longitude", "LATITUD"="latitude"))
 
@@ -112,28 +112,27 @@ routes <- geosphere::distm(points, points, fun = geosphere::distHaversine) %>%
   dplyr::filter(distance > 0) %>% 
   dplyr::mutate(belong = T) %>% 
   dplyr::arrange(-distance)
-
 g <- igraph::graph.data.frame(routes %>% dplyr::filter(belong))
 if(!complete.graph(g)){
   stop("WFT!, Initial graph is not complete")
 }
 nneighbors <- 7
-for (e in 1:nrow(routes)) {
-  routes$belong[e] <- F
-  few_neighbors <- routes %>% 
-    dplyr::filter(belong) %>% 
-    dplyr::group_by(i) %>% 
-    dplyr::summarise(neighbors = n()) %>% 
-    dplyr::mutate(few = neighbors < nneighbors) %>% 
-    dplyr::pull(few) %>% 
-    any()
-  if(few_neighbors){
-    routes$belong[e] <- T
-    next()
-  }
-  g <- igraph::graph.data.frame(routes %>% dplyr::filter(belong))
-  if(!complete.graph(g)){
-    routes$belong[e] <- T
+neighbors <- routes %>% 
+  dplyr::filter(belong) %>% 
+  dplyr::group_by(i) %>% 
+  dplyr::summarise(n = n())
+for (e in 1:200) {
+  if(e %% 10 == 0){print(e)}
+  if(neighbors$n[routes$i[e]] > nneighbors){
+    routes$belong[e] <- F
+    # g <- igraph::graph.data.frame(routes %>% dplyr::filter(belong))
+    g <- igraph::delete.edges(g,routes[e,c('i','j')])
+    if(!complete.graph(g)){
+      routes$belong[e] <- T
+      g <- igraph::add.edges(g,routes[e,c('i','j')])
+      next()
+    }
+    neighbors$n[routes$i[e]] <- neighbors$n[routes$i[e]] - 1
   }
 }
 plot(g)
@@ -152,29 +151,6 @@ routes_coords <- routes %>%
   }) %>% dplyr::bind_rows(.id = "route_id") %>% 
   dplyr::mutate(step_id = 1:n())
 
-if(F){
-  nneighbors <- 2
-  routes_coords <- expand.grid(i=1:n, j=1:n) %>% 
-    apply(1,function(x){
-      x <- as.list(x)
-      i <- x$i; j <- x$j;
-      if(i!=j){
-        distance <- geosphere::distm(points[i,], points[j,], fun = geosphere::distHaversine) # calculate distance from points
-        data.frame(i,j,distance, stringsAsFactors = F)
-      }
-    }) %>% 
-    dplyr::bind_rows() %>% 
-    dplyr::group_by(i) %>% 
-    dplyr::top_n(n = nneighbors, wt = 1/distance) %>% 
-    pbapply::pbapply(1,function(x){
-      x <- as.list(x)
-      i <- x$i; j <- x$j;
-      if(i!=j){
-        data.frame(i,j,route.calc(i,j,points), stringsAsFactors = F)
-      }
-    }) %>% dplyr::bind_rows(.id = "route_id") %>% 
-    dplyr::mutate(step_id = 1:n())
-}
 # routes_coords %>% 
 #   tidyr::gather(key,value,distance,traffic_time,base_time) %>% 
 #   ggplot2::ggplot() +
