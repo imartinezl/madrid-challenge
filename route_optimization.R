@@ -20,7 +20,7 @@ data_contenedores_vidrio <- read.csv('data/Contenedores_vidrio_con_publicidad.cs
                 LABEL = paste0("<b>Dirección:</b> ", Nombre))
 
 points <- data_contenedores_vidrio %>% 
-  dplyr::slice(1:10) %>% 
+  dplyr::slice(1:30) %>% 
   dplyr::select(LONGITUD, LATITUD) %>% 
   plyr::rename(c("LONGITUD"="longitude", "LATITUD"="latitude"))
 
@@ -107,16 +107,9 @@ complete.graph <- function(g){
 # Reduce graph connectivity -----------------------------------------------
 
 n <- nrow(points)
-routes <- expand.grid(i=1:n, j=1:n) %>% 
-  apply(1,function(x){
-    x <- as.list(x)
-    i <- x$i; j <- x$j;
-    if(i!=j){
-      distance <- geosphere::distm(points[i,], points[j,], fun = geosphere::distHaversine) # calculate distance from points
-      data.frame(i,j,distance, stringsAsFactors = F)
-    }
-  }) %>% 
-  dplyr::bind_rows() %>% 
+routes <- geosphere::distm(points, points, fun = geosphere::distHaversine) %>%
+  reshape2::melt(varnames = c("i", "j"), value.name = "distance") %>% 
+  dplyr::filter(distance > 0) %>% 
   dplyr::mutate(belong = T) %>% 
   dplyr::arrange(-distance)
 
