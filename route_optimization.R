@@ -209,27 +209,32 @@ plot.tour <- function(tour, routes_coords){
 plot.tour(tour, routes_coords)
 
 plot.tour.map <- function(tour, routes_coords){
-  pal <- leaflet::colorFactor("Accent", NULL)
-  leaflet::leaflet(options = leaflet::leafletOptions(minZoom = 0, maxZoom = 18)) %>% 
-    leaflet::addProviderTiles(leaflet::providers$Wikimedia, group = "Tiles") %>% 
-    leaflet::addMarkers(data = points %>% dplyr::mutate(point_id=1:n()), 
-                        lat = ~latitude, lng = ~longitude, label = ~as.character(point_id), 
-                        group = "Contenedores Vidrio") %>% 
-    leaflet::addPolylines(data = a, lng = ~route_long, lat = ~route_lat, 
-                          group = "Lines", smoothFactor = 1,
-                          label = ~lapply(label, htmltools::HTML)) %>% 
-    leaflet::setView(lat = 40.416673, lng = -3.703803, zoom = 14)
-  a <- data.frame(i=as.integer(tour), j=lead(as.integer(tour),1)) %>% 
-    na.omit() %>% 
-    dplyr::mutate(solution_id = 1:n(),
-                  color=viridis::cividis(n()) %>% substr(1,7)
-    ) %>% 
+  tour_path <- embed(c(i=tour, tour[1]), 2) %>% 
+    as.data.frame() %>% 
+    plyr::rename(c("V1"="i","V2"="j")) %>% 
+    dplyr::mutate(solution_id = 1:n()) %>% 
     merge(routes_coords, by=c("i","j"), all.x = T, sort=F) %>% 
     dplyr::arrange(solution_id, step_id) %>% 
     dplyr::mutate(label = paste0("From ",i," to ", j))
-  
+  map <- leaflet::leaflet(options = leaflet::leafletOptions(minZoom = 0, maxZoom = 18)) %>% 
+    leaflet::addProviderTiles(leaflet::providers$Wikimedia, group = "Tiles") %>% 
+    leaflet::addMarkers(data = points %>% dplyr::mutate(point_id=1:n()), 
+                        lat = ~latitude, lng = ~longitude, label = ~as.character(point_id), 
+                        group = "Contenedores Vidrio")
+  groups <- tour_path %>% dplyr::pull(solution_id) %>% unique()
+  pal <- leaflet::colorFactor(viridis::plasma(length(tour)-1), groups)
+  for(g in groups){
+    data_g <- tour_path[tour_path$solution_id == g, ]
+    map <- map %>% leaflet::addPolylines(data = data_g, group = paste0("Lines_",g), 
+                                         lng = ~route_long, lat = ~route_lat,
+                                         color = ~pal(g), label = ~lapply(label, htmltools::HTML),
+                                         weight = 2
+                                         )
+    
+  }
+  map %>% leaflet::setView(lat = 40.416673, lng = -3.703803, zoom = 14)
 }
-
+plot.tour.map(tour,routes_coords)
 
 # Simulated Annealing -----------------------------------------------------
 
