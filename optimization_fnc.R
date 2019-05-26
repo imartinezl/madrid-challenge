@@ -51,68 +51,71 @@ run_intermediate_annealing_process <- function(points, distance_matrix, tour, to
   return(list(tour=tour, tour_distance=tour_distance, best_tour=best_tour, best_distance=best_distance))
 }
 
-points <- points
-distance_matrix <- distance_matrix
-tour <- sample(n)
-tour_distance <- calculate_tour_distance(tour, distance_matrix)
-best_tour <- c()
-best_distance <- Inf
-total_iterations <- 25000
-iter <- 0
-plot_every_iterations <- 500
-s_curve_amplitude <- 4000
-s_curve_center <- 0
-s_curve_width <- 3000
-
-number_of_loops <- ceiling(total_iterations / plot_every_iterations)
-distances <- rep(NA, number_of_loops)
-plot.tour(tour, routes_coords)
-
-for(i in 1:number_of_loops){
-  intermediate_results <- run_intermediate_annealing_process(points, distance_matrix, tour, tour_distance, best_tour, best_distance,
-                                                             iter, plot_every_iterations,
-                                                             s_curve_amplitude, s_curve_center, s_curve_width)
+simulated.annealing <- function(points, distance_matrix){
+  n <- length(points)
+  tour <- sample(n)
+  tour_distance <- calculate_tour_distance(tour, distance_matrix)
+  best_tour <- c()
+  best_distance <- Inf
+  total_iterations <- 25000
+  iter <- 0
+  plot_every_iterations <- 500
+  s_curve_amplitude <- 4000
+  s_curve_center <- 0
+  s_curve_width <- 3000
   
-  tour <- intermediate_results$tour
-  tour_distance <- intermediate_results$tour_distance
-  best_tour <- intermediate_results$best_tour
-  best_distance <- intermediate_results$best_distance
+  number_of_loops <- ceiling(total_iterations / plot_every_iterations)
+  distances <- rep(NA, number_of_loops)
+  plot.tour(tour, routes_coords)
   
-  iter <- iter + plot_every_iterations
-  
-  distances[ceiling(iter / plot_every_iterations)] <- intermediate_results$tour_distance
+  for(i in 1:number_of_loops){
+    intermediate_results <- run_intermediate_annealing_process(points, distance_matrix, tour, tour_distance, best_tour, best_distance,
+                                                               iter, plot_every_iterations,
+                                                               s_curve_amplitude, s_curve_center, s_curve_width)
+    
+    tour <- intermediate_results$tour
+    tour_distance <- intermediate_results$tour_distance
+    best_tour <- intermediate_results$best_tour
+    best_distance <- intermediate_results$best_distance
+    
+    iter <- iter + plot_every_iterations
+    
+    distances[ceiling(iter / plot_every_iterations)] <- intermediate_results$tour_distance
+  }
+  plot(distances)
+  plot.tour(best_tour, routes_coords)
 }
-plot(distances)
-plot.tour(best_tour, routes_coords)
-
-
-
-
 
 # Linear Programming Problem ----------------------------------------------------------------
 
-objective.in <- routes$traffic_time
-const.rhs <- rep(1,nconstraint)
-const.dir  <- rep("==", nconstraint)
-
-# Find the optimal solution
-optimum <-  lpSolve::lp(direction="min",
-                        objective.in = objective.in,
-                        const.mat = const.mat,
-                        const.dir = const.dir,
-                        const.rhs = const.rhs,
-                        all.int = T)
-
-# Print status: 0 = success, 2 = no feasible solution
-print(optimum$status)
-# Display the optimum values for x_4p, x_3p and x_w
-best_sol <- optimum$solution
-names(best_sol) <- c("x_4p", "x_3p", "x_w") 
-print(best_sol)
-
-# Check the value of objective function at optimal point
-print(paste("Total cost: ", optimum$objval, sep=""))
-
+lp <- function(routes, points){
+  
+  nvar <- nrow(routes)
+  nconstraint <- length(points)
+  
+  objective.in <- routes$traffic_time
+  const.rhs <- rep(1,nconstraint)
+  const.dir  <- rep("==", nconstraint)
+  # const.mat <- 
+  
+  # Find the optimal solution
+  optimum <-  lpSolve::lp(direction="min",
+                          objective.in = objective.in,
+                          const.mat = const.mat,
+                          const.dir = const.dir,
+                          const.rhs = const.rhs,
+                          all.int = T)
+  
+  # Print status: 0 = success, 2 = no feasible solution
+  print(optimum$status)
+  # Display the optimum values for x_4p, x_3p and x_w
+  best_sol <- optimum$solution
+  names(best_sol) <- c("x_4p", "x_3p", "x_w") 
+  print(best_sol)
+  
+  # Check the value of objective function at optimal point
+  print(paste("Total cost: ", optimum$objval, sep=""))
+}
 
 # New LP TSP Function ------------------------------------------------------
 
@@ -162,13 +165,11 @@ tspsolve <- function(x){
   ## return the results as a sequence of vertices, and the score = total cycle length
   list(cycle=colNum[res$solution==1],score=res$objval)
 }
-set.seed(123)
-x<-matrix(c(0,2,1e10, 1,0,2, 2,3,0),byrow = T,c(3,3))
-tspsolve(x)
-tspsolve(distance_matrix)
 
 # Dijkstra Algorithm for Shortest Path Tree ------------------------------------
 
+if(F){
+  
 spt <- optrees::getShortestPathTree(nodes = 1:10, 
                                     arcs = routes %>% dplyr::select(i,j,traffic_time) %>% as.matrix(),
                                     algorithm = "Dijkstra", directed=F, check.graph = T)
@@ -194,4 +195,5 @@ mab <- optrees::getMinimumArborescence(nodes = 1:10,
 mab$tree.arcs
 plot.tour(mab$tree.nodes, routes_coords)
 
+}
 
