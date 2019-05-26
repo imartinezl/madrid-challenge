@@ -70,7 +70,6 @@ get.edges <- function(points){
     dplyr::mutate(belong = T) %>%  
     dplyr::arrange(-distance)
 }
-
 reduce.graph <- function(edges, nneighbors){
   g <- igraph::graph.data.frame(edges %>% dplyr::filter(belong))
   # igraph::get.edgelist(g) %>% View
@@ -101,42 +100,51 @@ reduce.graph <- function(edges, nneighbors){
   edges
 }
 
+edges <- get.edges(points)
+
+
 # Route Download
-routes_file <- "routes_backup.csv"
-if(!file.exists(routes_file)){
-  routes_coords <- edges %>% 
-    dplyr::filter(belong) %>% 
-    dplyr::select(i,j,distance) %>% 
-    pbapply::pbapply(1,function(x){
-      i <- x['i']; j <- x['j'];
-      if(i!=j){
-        data.frame(i,j,route.calc(i,j,points), stringsAsFactors = F)
-      }
-    }) %>% 
-    dplyr::bind_rows(.id = "route_id") %>% 
-    dplyr::mutate(step_id = 1:n())
-  write.csv(routes_coords, routes_file, row.names = F)
-}else{
-  routes_coords <- read.csv(routes_file)
+route.download <- function(points, edges){ 
+  routes_file <- "routes_backup.csv"
+  if(!file.exists(routes_file)){
+    routes_coords <- edges %>% 
+      dplyr::filter(belong) %>% 
+      dplyr::select(i,j,distance) %>% 
+      pbapply::pbapply(1,function(x){
+        i <- x['i']; j <- x['j'];
+        if(i!=j){
+          data.frame(i,j,route.calc(i,j,points), stringsAsFactors = F)
+        }
+      }) %>% 
+      dplyr::bind_rows(.id = "route_id") %>% 
+      dplyr::mutate(step_id = 1:n())
+    write.csv(routes_coords, routes_file, row.names = F)
+  }else{
+    routes_coords <- read.csv(routes_file)
+  }
 }
-
-ggplot2::ggplot()+
-  ggplot2::geom_path(data = routes_coords, ggplot2::aes(x=route_long,y=route_lat, group=factor(route_id), color=factor(i)))+
-  ggplot2::geom_label(data = points %>% dplyr::mutate(point_id=1:n()),
-                      ggplot2::aes(x=longitude, y=latitude, label=point_id),size=5)+
-  ggplot2::coord_equal()
-
+routes_coords <- route.download(points, edges)
 routes <- routes_coords %>% 
   dplyr::select(route_id,i,j,traffic_time,base_time,distance) %>% 
   unique() %>% 
   dplyr::arrange(i,j)
 
-nvar <- nrow(routes)
-nconstraint <- n
+routes.plot <- function(points, routes_coords){
+  ggplot2::ggplot()+
+    ggplot2::geom_path(data = routes_coords, ggplot2::aes(x=route_long,y=route_lat, group=factor(route_id), color=factor(i)))+
+    ggplot2::geom_label(data = points %>% dplyr::mutate(point_id=1:n()),
+                        ggplot2::aes(x=longitude, y=latitude, label=point_id),size=5)+
+    ggplot2::coord_equal()
+}
+routes.plot(points, routes_coords)
+
+
+
+
 
 distance_matrix <- matrix(1e9, nrow = n, ncol = n)
 diag(distance_matrix) <- 1e9
-for(x in 1:nvar){
+for(x in 1: nrow(routes)){
   distance_matrix[routes$i[x],routes$j[x]] <- routes$traffic_time[x]
 }
 image(distance_matrix)
