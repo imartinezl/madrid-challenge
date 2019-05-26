@@ -19,7 +19,7 @@ madrid_central_data <- sp::coordinates(madrid_central)[[1]][[1]] %>%
 inside.madrid.central <- function(longitude, latitude, madrid_central_data){
   sp::point.in.polygon(longitude, latitude, 
                        madrid_central_data$longitude, 
-                       madrid_central_data$latitude) %>% as.factor()
+                       madrid_central_data$latitude)
 }
 
 # Contenedores Vidrio
@@ -37,8 +37,12 @@ points <- data_contenedores_vidrio %>%
   dplyr::mutate(inside_madrid_central = inside.madrid.central(longitude, latitude, madrid_central_data))
 
 ggplot2::ggplot()+
-  ggplot2::geom_point(data=points, ggplot2::aes(x=longitude,y=latitude,color=inside_madrid_central))+
+  ggplot2::geom_point(data=points, ggplot2::aes(x=longitude,y=latitude,color=factor(inside_madrid_central)))+
   ggplot2::geom_path(data=madrid_central_data, ggplot2::aes(x=longitude,y=latitude))
+
+points <- points %>% 
+  dplyr::filter(inside_madrid_central == 1) %>% 
+  dplyr::select(-inside_madrid_central)
 
 # Graph: Edges & Points ---------------------------------------------------
 
