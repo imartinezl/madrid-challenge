@@ -13,6 +13,14 @@ source('route_opt_fnc.R')
 # Madrid Central
 madrid_central <- rgdal::readOGR("data/Madrid_Central/Madrid_Central.shp", GDAL1_integer64_policy = TRUE)
 madrid_central <- sp::spTransform(madrid_central, sp::CRS("+init=epsg:4326"))
+madrid_central_data <- sp::coordinates(madrid_central)[[1]][[1]] %>% 
+  as.data.frame() %>% 
+  `colnames<-`(c("longitude","latitude"))
+inside.madrid.central <- function(longitude, latitude, madrid_central_data){
+  sp::point.in.polygon(longitude, latitude, 
+                       madrid_central_data$longitude, 
+                       madrid_central_data$latitude) %>% as.factor()
+}
 
 # Contenedores Vidrio
 data_contenedores_vidrio <- read.csv('data/Contenedores_vidrio_con_publicidad.csv', sep = ";", dec = ".", stringsAsFactors = F) %>% 
@@ -23,14 +31,18 @@ data_contenedores_vidrio <- read.csv('data/Contenedores_vidrio_con_publicidad.cs
                 LABEL = paste0("<b>Dirección:</b> ", Nombre))
 
 points <- data_contenedores_vidrio %>% 
-  dplyr::slice(1:5) %>% 
+  # dplyr::slice(1:10) %>% 
   dplyr::select(LONGITUD, LATITUD) %>% 
-  plyr::rename(c("LONGITUD"="longitude", "LATITUD"="latitude"))
+  plyr::rename(c("LONGITUD"="longitude", "LATITUD"="latitude")) %>% 
+  dplyr::mutate(inside_madrid_central = inside.madrid.central(longitude, latitude, madrid_central_data))
 
+ggplot2::ggplot()+
+  ggplot2::geom_point(data=points, ggplot2::aes(x=longitude,y=latitude,color=inside_madrid_central))+
+  ggplot2::geom_path(data=madrid_central_data, ggplot2::aes(x=longitude,y=latitude))
 
 # Graph: Edges & Points ---------------------------------------------------
 
-edges_haversine <- edges.haversine(points)
+edges_haversine <- edges.haversine(points) #%>% edges.reduce(5)
 edges_route <- edges.route(points, edges_haversine)
 edges_summary <- edges.summary(edges_route)
 edges.plot(points, edges_route)
@@ -40,8 +52,15 @@ distance_matrix <- distance.matrix(edges_summary)
 
 # Optimization ------------------------------------------------------------
 
-c(d,tour) %<-% simulated.annealing(points, edges_summary)
-plot.tour(tour, edges_route)
-plot.tour.map(tour, edges_route)
+c(d,tours,best_tour) %<-% simulated.annealing(points, distance_matrix)
+
+atsp <- TSP::ATSP(distance_matrix)
+tour <- TSP::solve_TSP(x = atsp, method="arbitrary_insertion") %>% as.integer()
+tour <- TSP::solve_TSP(x = atsp, method="nearest_insertion") %>% as.integer()
+tour <- TSP::solve_TSP(x = atsp, method="farthest_insertion") %>% as.integer()
+
+plot.tour(best_tour, edges_route)
+plot.tour.map(best_tour, edges_route)
+
 
 
