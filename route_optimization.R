@@ -20,14 +20,14 @@ data_contenedores_vidrio <- read.csv('data/Contenedores_vidrio_con_publicidad.cs
                 LABEL = paste0("<b>Dirección:</b> ", Nombre))
 
 points <- data_contenedores_vidrio %>% 
-  dplyr::slice(1:30) %>% 
+  dplyr::slice(1:5) %>% 
   dplyr::select(LONGITUD, LATITUD) %>% 
   plyr::rename(c("LONGITUD"="longitude", "LATITUD"="latitude"))
 
 
 # Route Request -----------------------------------------------------------
 
-route.request <- function(waypoint0, waypoint1, mode){
+route.calc.request <- function(waypoint0, waypoint1, mode, representation){
   base <- "https://route.api.here.com/routing/7.2/"
   endpoint <- "calculateroute.json"
   app_id <- Sys.getenv("HERE_APP_ID")
@@ -35,7 +35,7 @@ route.request <- function(waypoint0, waypoint1, mode){
   
   url <- paste0(base,endpoint,"?","app_id=", app_id, "&app_code=", app_code, 
                 "&waypoint0=geo!", waypoint0, "&waypoint1=geo!", waypoint1, 
-                "&mode=", mode)
+                "&mode=", mode, "&representation=",representation)
   tryCatch({
     r <- httr::GET(url)
     httr::stop_for_status(r)
@@ -46,7 +46,7 @@ route.request <- function(waypoint0, waypoint1, mode){
     warning(paste0("HTTP error ", e))
   })
 }
-route.info <- function(content){
+route.calc.info <- function(content){
   distance <- content$response$route$summary$distance
   traffic_time <- content$response$route$summary$trafficTime
   base_time <- content$response$route$summary$baseTime
@@ -66,8 +66,16 @@ route.info <- function(content){
 route.calc <- function(i,j, points){
   waypoint0 <- paste0(points$latitude[i],',',points$longitude[i])
   waypoint1 <- paste0(points$latitude[j],',',points$longitude[j])
-  mode <- "fastest;truck;traffic:disabled"
-  route.request(waypoint0, waypoint1, mode) %>% route.info()
+  mode <- "fastest;truck;traffic:disabled;"
+  representation <- "navigation"
+  content <- route.calc.request(waypoint0, waypoint1, mode, representation)
+  lapply(content$response$route$shape[[1]],function(p){
+    p %>% 
+      stringr::str_split(',') %>% 
+      unlist() %>% 
+      as.numeric()
+  }) %>% dplyr::bind_rows()
+  route.calc.request(waypoint0, waypoint1, mode, representation) %>% route.calc.info()
 }
 
 
@@ -110,13 +118,14 @@ n <- nrow(points)
 edges <- geosphere::distm(points, points, fun = geosphere::distHaversine) %>%
   reshape2::melt(varnames = c("i", "j"), value.name = "distance") %>% 
   dplyr::filter(distance > 0) %>% 
-  dplyr::mutate(belong = T) %>% 
+  dplyr::mutate(belong = T) %>%  
   dplyr::arrange(-distance)
 g <- igraph::graph.data.frame(edges %>% dplyr::filter(belong))
+igraph::get.edgelist(g) %>% View
 if(!complete.graph(g)){
   stop("WFT!, Initial graph is not complete")
 }
-nneighbors <- 7
+nneighbors <- 10
 neighbors <- edges %>% 
   dplyr::filter(belong) %>% 
   dplyr::group_by(i) %>% 
@@ -126,12 +135,13 @@ for (e in 1:nrow(edges)) {
   if(neighbors$n[edges$i[e]] > nneighbors){
     edges$belong[e] <- F
     # g <- igraph::graph.data.frame(edges %>% dplyr::filter(belong))
-    g <- igraph::delete.edges(g,edges[e,c('i','j')])
-    if(!complete.graph(g)){
-      edges$belong[e] <- T
-      g <- igraph::add.edges(g,edges[e,c('i','j')])
-      next()
-    }
+    to_remove <- edges %>% dplyr::slice(e) %>% dplyr::mutate(remove = paste0(i,'|',j)) %>% dplyr::pull(remove)
+    g <- igraph::delete.edges(g,to_remove) #edges[e,c('i','j')])
+    # if(!complete.graph(g)){
+    #   edges$belong[e] <- T
+    #   g <- igraph::add.edges(g,edges[e,c('i','j')])
+    #   next()
+    # }
     neighbors$n[edges$i[e]] <- neighbors$n[edges$i[e]] - 1
   }
 }
@@ -145,8 +155,7 @@ if(!file.exists(routes_file)){
     dplyr::filter(belong) %>% 
     dplyr::select(i,j,distance) %>% 
     pbapply::pbapply(1,function(x){
-      x <- as.list(x)
-      i <- x$i; j <- x$j;
+      i <- x['i']; j <- x['j'];
       if(i!=j){
         data.frame(i,j,route.calc(i,j,points), stringsAsFactors = F)
       }
