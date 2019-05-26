@@ -1,3 +1,4 @@
+
 # TSP Package -------------------------------------------------------------
 
 # Nearest, farthest, cheapest and arbitrary insertion algorithms
@@ -8,17 +9,21 @@ tour <- TSP::solve_TSP(x = atsp, method="farthest_insertion")
 as.integer(tour)
 tour
 
+
 # Simulated Annealing -----------------------------------------------------
 
 calculate_tour_distance <- function(tour, distance_matrix) {
   sum(distance_matrix[embed(c(tour, tour[1]), 2)])
 }
+
 current_temperature <- function(iter, s_curve_amplitude, s_curve_center, s_curve_width) {
   s_curve_amplitude * s_curve(iter, s_curve_center, s_curve_width)
 }
+
 s_curve <- function(x, center, width) {
   1 / (1 + exp((x - center) / width))
 }
+
 run_intermediate_annealing_process <- function(points, distance_matrix, tour, tour_distance, best_tour, best_distance,
                                                starting_iteration, number_of_iterations,
                                                s_curve_amplitude, s_curve_center, s_curve_width) {
@@ -52,7 +57,7 @@ run_intermediate_annealing_process <- function(points, distance_matrix, tour, to
 }
 
 simulated.annealing <- function(points, distance_matrix){
-  n <- length(points)
+  n <- nrow(points)
   tour <- sample(n)
   tour_distance <- calculate_tour_distance(tour, distance_matrix)
   best_tour <- c()
@@ -66,8 +71,7 @@ simulated.annealing <- function(points, distance_matrix){
   
   number_of_loops <- ceiling(total_iterations / plot_every_iterations)
   distances <- rep(NA, number_of_loops)
-  plot.tour(tour, routes_coords)
-  
+
   for(i in 1:number_of_loops){
     intermediate_results <- run_intermediate_annealing_process(points, distance_matrix, tour, tour_distance, best_tour, best_distance,
                                                                iter, plot_every_iterations,
@@ -82,9 +86,9 @@ simulated.annealing <- function(points, distance_matrix){
     
     distances[ceiling(iter / plot_every_iterations)] <- intermediate_results$tour_distance
   }
-  plot(distances)
-  plot.tour(best_tour, routes_coords)
+  return(list(d=distances, tour=best_tour))
 }
+
 
 # Linear Programming Problem ----------------------------------------------------------------
 

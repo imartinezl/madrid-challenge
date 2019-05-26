@@ -1,37 +1,9 @@
-# Route Optimization
-
-# Libraries ---------------------------------------------------------------
-
-library(dplyr)
-library(zeallot)
-
-# Data Importation --------------------------------------------------------
-
-# Madrid Central
-madrid_central <- rgdal::readOGR("data/Madrid_Central/Madrid_Central.shp", GDAL1_integer64_policy = TRUE)
-madrid_central <- sp::spTransform(madrid_central, sp::CRS("+init=epsg:4326"))
-
-# Contenedores Vidrio
-data_contenedores_vidrio <- read.csv('data/Contenedores_vidrio_con_publicidad.csv', sep = ";", dec = ".", stringsAsFactors = F) %>% 
-  dplyr::mutate(FECHA.PUESTA.EN.SERVICIO = as.Date(FECHA.PUESTA.EN.SERVICIO, format="%d/%m/%Y"),
-                LONGITUD = as.numeric(sub(",", ".", Longitud, fixed = TRUE)),
-                LATITUD = as.numeric(sub(",", ".", Latitud, fixed = TRUE)),
-                Nombre = stringr::str_to_title(Nombre),
-                LABEL = paste0("<b>Dirección:</b> ", Nombre))
-
-points <- data_contenedores_vidrio %>% 
-  dplyr::slice(1:5) %>% 
-  dplyr::select(LONGITUD, LATITUD) %>% 
-  plyr::rename(c("LONGITUD"="longitude", "LATITUD"="latitude"))
 
 
-# Route Request -----------------------------------------------------------
-source('route_request.R')
-
-
-# DFS for graph completeness ----------------------------------------------
+# Graph Completeness ------------------------------------------------------
 
 dfs.from.v <- function(g,v){
+  # DFS for graph completeness ----------------------------------------------
   vertex_names <- igraph::vertex.attributes(g)$name
   # vertex_num <- vertex_names %>% length()
   vertex <- c()
@@ -52,6 +24,7 @@ dfs.from.v <- function(g,v){
   complete_graph <- rle(mode)$lengths %>% length() == 2
   return(complete_graph)
 }
+
 complete.graph <- function(g){
   vertex_names <- igraph::vertex.attributes(g)$name
   for(v in vertex_names){
@@ -62,15 +35,18 @@ complete.graph <- function(g){
   return(F)
 }
 
-# Reduce graph connectivity -----------------------------------------------
-get.edges <- function(points){
+
+# Graph Edges -------------------------------------------------------------
+
+edges.haversine <- function(points){
   geosphere::distm(points, points, fun = geosphere::distHaversine) %>%
     reshape2::melt(varnames = c("i", "j"), value.name = "distance") %>% 
     dplyr::filter(distance > 0) %>% 
     dplyr::mutate(belong = T) %>%  
     dplyr::arrange(-distance)
 }
-reduce.graph <- function(edges, nneighbors){
+
+edges.reduce <- function(edges, nneighbors){
   g <- igraph::graph.data.frame(edges %>% dplyr::filter(belong))
   # igraph::get.edgelist(g) %>% View
   if(!complete.graph(g)){
@@ -100,14 +76,10 @@ reduce.graph <- function(edges, nneighbors){
   edges
 }
 
-edges <- get.edges(points)
-
-
-# Route Download
-route.download <- function(points, edges){ 
+edges.route <- function(points, edges){ 
   routes_file <- "routes_backup.csv"
   if(!file.exists(routes_file)){
-    routes_coords <- edges %>% 
+    edges_route <- edges %>% 
       dplyr::filter(belong) %>% 
       dplyr::select(i,j,distance) %>% 
       pbapply::pbapply(1,function(x){
@@ -118,48 +90,47 @@ route.download <- function(points, edges){
       }) %>% 
       dplyr::bind_rows(.id = "route_id") %>% 
       dplyr::mutate(step_id = 1:n())
-    write.csv(routes_coords, routes_file, row.names = F)
+    write.csv(edges_route, routes_file, row.names = F)
   }else{
-    routes_coords <- read.csv(routes_file)
+    edges_route <- read.csv(routes_file)
   }
 }
-routes_coords <- route.download(points, edges)
-routes <- routes_coords %>% 
-  dplyr::select(route_id,i,j,traffic_time,base_time,distance) %>% 
-  unique() %>% 
-  dplyr::arrange(i,j)
 
-routes.plot <- function(points, routes_coords){
+edges.summary <- function(edges_route){
+  edges_route %>% 
+    dplyr::select(route_id,i,j,traffic_time,base_time,distance) %>% 
+    unique() %>% 
+    dplyr::arrange(i,j)
+}
+
+distance.matrix <- function(edges){
+  n <- max(edges$i, edges$j)
+  distance_matrix <- matrix(1e9, nrow = n, ncol = n)
+  diag(distance_matrix) <- 1e9
+  for(x in 1: nrow(edges)){
+    distance_matrix[edges$i[x],edges$j[x]] <- edges$traffic_time[x]
+  }
+  # image(distance_matrix)
+  distance_matrix
+}
+
+# Plot Tour ---------------------------------------------------------------
+
+edges.plot <- function(points, edges_route){
   ggplot2::ggplot()+
-    ggplot2::geom_path(data = routes_coords, ggplot2::aes(x=route_long,y=route_lat, group=factor(route_id), color=factor(i)))+
+    ggplot2::geom_path(data = edges_route, ggplot2::aes(x=route_long,y=route_lat, group=factor(route_id), color=factor(i)))+
     ggplot2::geom_label(data = points %>% dplyr::mutate(point_id=1:n()),
                         ggplot2::aes(x=longitude, y=latitude, label=point_id),size=5)+
     ggplot2::coord_equal()
 }
-routes.plot(points, routes_coords)
 
-
-
-
-
-distance_matrix <- matrix(1e9, nrow = n, ncol = n)
-diag(distance_matrix) <- 1e9
-for(x in 1: nrow(routes)){
-  distance_matrix[routes$i[x],routes$j[x]] <- routes$traffic_time[x]
-}
-image(distance_matrix)
-distance_matrix
-
-
-# Plot Tour ---------------------------------------------------------------
-
-plot.tour <- function(tour, routes_coords){
+plot.tour <- function(tour, edges_route){
   tour <- as.integer(tour)
   tour[length(tour)+1] <- tour[1]
   data.frame(i=tour, j=lead(tour,1)) %>% 
     na.omit() %>% 
     dplyr::mutate(solution_id = 1:n()) %>% 
-    merge(routes_coords, by=c("i","j"), all.x = T, sort=F) %>% 
+    merge(edges_route, by=c("i","j"), all.x = T, sort=F) %>% 
     dplyr::arrange(solution_id, step_id) %>% 
     ggplot2::ggplot()+
     ggplot2::geom_path(ggplot2::aes(x=route_long, y=route_lat, group=factor(route_id), color=factor(solution_id)))+
@@ -168,14 +139,13 @@ plot.tour <- function(tour, routes_coords){
                         ggplot2::aes(x=longitude, y=latitude, label=point_id),size=3)+
     ggplot2::coord_equal()
 }
-plot.tour(tour, routes_coords)
 
-plot.tour.map <- function(tour, routes_coords){
+plot.tour.map <- function(tour, edges_route){
   tour_path <- embed(c(i=tour, tour[1]), 2) %>% 
     as.data.frame() %>% 
     plyr::rename(c("V1"="i","V2"="j")) %>% 
     dplyr::mutate(solution_id = 1:n()) %>% 
-    merge(routes_coords, by=c("i","j"), all.x = T, sort=F) %>% 
+    merge(edges_route, by=c("i","j"), all.x = T, sort=F) %>% 
     dplyr::arrange(solution_id, step_id) %>% 
     dplyr::mutate(label = paste0("From ",i," to ", j))
   map <- leaflet::leaflet(options = leaflet::leafletOptions(minZoom = 0, maxZoom = 18)) %>% 
@@ -196,5 +166,3 @@ plot.tour.map <- function(tour, routes_coords){
   }
   map %>% leaflet::setView(lat = 40.416673, lng = -3.703803, zoom = 14)
 }
-plot.tour.map(tour,routes_coords)
-
