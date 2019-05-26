@@ -71,7 +71,8 @@ simulated.annealing <- function(points, distance_matrix){
   
   number_of_loops <- ceiling(total_iterations / plot_every_iterations)
   distances <- rep(NA, number_of_loops)
-
+  tours <- rep(NA, number_of_loops)
+  
   for(i in 1:number_of_loops){
     intermediate_results <- run_intermediate_annealing_process(points, distance_matrix, tour, tour_distance, best_tour, best_distance,
                                                                iter, plot_every_iterations,
@@ -85,8 +86,9 @@ simulated.annealing <- function(points, distance_matrix){
     iter <- iter + plot_every_iterations
     
     distances[ceiling(iter / plot_every_iterations)] <- intermediate_results$tour_distance
+    tours[[ceiling(iter / plot_every_iterations)]] <- list(intermediate_results$tour)
   }
-  return(list(d=distances, tour=best_tour))
+  return(list(d=distances, tours=tours, best_tour=best_tour))
 }
 
 
