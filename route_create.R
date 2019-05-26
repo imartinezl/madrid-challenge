@@ -94,6 +94,7 @@ edges.route <- function(points, edges){
   }else{
     edges_route <- read.csv(routes_file)
   }
+  edges_route
 }
 
 edges.summary <- function(edges_route){
@@ -125,10 +126,13 @@ edges.plot <- function(points, edges_route){
 }
 
 plot.tour <- function(tour, edges_route){
-  tour <- as.integer(tour)
-  tour[length(tour)+1] <- tour[1]
-  data.frame(i=tour, j=lead(tour,1)) %>% 
-    na.omit() %>% 
+  # tour <- as.integer(tour)
+  # tour[length(tour)+1] <- tour[1]
+  # data.frame(i=tour, j=lead(tour,1)) %>% 
+  #   na.omit() %>% 
+  embed(c(i=tour, tour[1]), 2) %>% 
+    as.data.frame() %>% 
+    plyr::rename(c("V1"="i","V2"="j")) %>%
     dplyr::mutate(solution_id = 1:n()) %>% 
     merge(edges_route, by=c("i","j"), all.x = T, sort=F) %>% 
     dplyr::arrange(solution_id, step_id) %>% 
