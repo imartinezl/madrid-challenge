@@ -1,14 +1,15 @@
 
 # TSP Package -------------------------------------------------------------
 
-# Nearest, farthest, cheapest and arbitrary insertion algorithms
-atsp <- TSP::ATSP(distance_matrix)
-tour <- TSP::solve_TSP(x = atsp, method="arbitrary_insertion")
-tour <- TSP::solve_TSP(x = atsp, method="nearest_insertion")
-tour <- TSP::solve_TSP(x = atsp, method="farthest_insertion")
-as.integer(tour)
-tour
-
+if(F){
+  # Nearest, farthest, cheapest and arbitrary insertion algorithms
+  atsp <- TSP::ATSP(distance_matrix)
+  tour <- TSP::solve_TSP(x = atsp, method="arbitrary_insertion")
+  tour <- TSP::solve_TSP(x = atsp, method="nearest_insertion")
+  tour <- TSP::solve_TSP(x = atsp, method="farthest_insertion")
+  as.integer(tour)
+  tour
+}
 
 # Simulated Annealing -----------------------------------------------------
 
