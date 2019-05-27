@@ -119,10 +119,11 @@ distance.matrix <- function(edges){
 
 edges.plot <- function(points, edges_route){
   ggplot2::ggplot()+
-    ggplot2::geom_path(data = edges_route, ggplot2::aes(x=route_long,y=route_lat, group=factor(route_id), color=factor(i)))+
+    ggplot2::geom_path(data = edges_route, ggplot2::aes(x=route_long, y=route_lat, group=factor(route_id), color=factor(i)) )+
     ggplot2::geom_label(data = points %>% dplyr::mutate(point_id=1:n()),
                         ggplot2::aes(x=longitude, y=latitude, label=point_id),size=5)+
-    ggplot2::coord_equal()
+    ggplot2::coord_equal()+
+    ggplot2::theme(legend.position = "none")
 }
 
 plot.tour <- function(tour, edges_route){
@@ -137,6 +138,7 @@ plot.tour <- function(tour, edges_route){
     merge(edges_route, by=c("i","j"), all.x = T, sort=F) %>% 
     dplyr::arrange(solution_id, step_id) %>% 
     ggplot2::ggplot()+
+    ggplot2::geom_path(data = edges_route, ggplot2::aes(x=route_long,y=route_lat, group=factor(route_id)), color="#dddddd")+
     ggplot2::geom_path(ggplot2::aes(x=route_long, y=route_lat, group=factor(route_id), color=factor(solution_id)))+
     # ggplot2::geom_point(ggplot2::aes(x=route_long, y=route_lat))+
     ggplot2::geom_label(data = points %>% dplyr::mutate(point_id=1:n()),
