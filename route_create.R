@@ -119,11 +119,38 @@ distance.matrix <- function(edges){
 
 edges.plot <- function(points, edges_route){
   ggplot2::ggplot()+
-    ggplot2::geom_path(data = edges_route, ggplot2::aes(x=route_long, y=route_lat, group=factor(route_id), color=factor(i)) )+
+    ggplot2::geom_path(data = edges_route, ggplot2::aes(x=route_long, y=route_lat, group=factor(route_id)), size=0.2, alpha=0.3 )+
     ggplot2::geom_label(data = points %>% dplyr::mutate(point_id=1:n()),
                         ggplot2::aes(x=longitude, y=latitude, label=point_id),size=5)+
     ggplot2::coord_equal()+
     ggplot2::theme(legend.position = "none")
+}
+
+edges.route.matrix <- function(edges_route){
+  i <- which(edges_route$route_id != lead(edges_route$route_id, 1))
+  m <- edges_route %>% dplyr::select(route_long, route_lat) %>% as.matrix()
+  ris <- integer(nrow(m)+length(i))
+  ris[i] <- nrow(m)+1L
+  ris[-i] <- seq_len(nrow(m))
+  rbind(m,NA)[ris,]
+}
+edges.plot.map <- function(points, edges_route){
+  map <- leaflet::leaflet(options = leaflet::leafletOptions(minZoom = 0, maxZoom = 18)) %>% 
+    leaflet::addProviderTiles(leaflet::providers$Wikimedia, group = "Tiles") %>% 
+    leaflet::addMarkers(data = points %>% dplyr::mutate(point_id=1:n()), 
+                        lat = ~latitude, lng = ~longitude, label = ~as.character(point_id), 
+                        group = "Contenedores Vidrio")
+    # leaflet::addPolygons(data=edges_route, lng=~route_long, lat=~route_lat, group = "All Paths", fill = F)
+  
+  groups <- edges_route %>% dplyr::pull(route_id) %>% unique()
+  pal <- leaflet::colorFactor(viridis::plasma(nrow(points)-1), groups)
+  for(g in groups){
+    data_g <- edges_route[edges_route$route_id == g, ]
+    map <- map %>% leaflet::addPolylines(data = data_g, group = paste0("Lines_",g), 
+                                         lng = ~route_long, lat = ~route_lat,
+                                         color = ~pal(g), weight = 2)
+  }
+  map
 }
 
 plot.tour <- function(tour, edges_route){
@@ -143,7 +170,8 @@ plot.tour <- function(tour, edges_route){
     # ggplot2::geom_point(ggplot2::aes(x=route_long, y=route_lat))+
     ggplot2::geom_label(data = points %>% dplyr::mutate(point_id=1:n()),
                         ggplot2::aes(x=longitude, y=latitude, label=point_id),size=3)+
-    ggplot2::coord_equal()
+    ggplot2::coord_equal()+
+    ggplot2::theme(legend.position = "none")
 }
 
 plot.tour.map <- function(tour, edges_route){
