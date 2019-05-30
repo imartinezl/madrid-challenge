@@ -49,13 +49,16 @@ points <- points %>%
 edges_haversine <- edges.haversine(points) #%>% edges.reduce(5)
 edges_route <- edges.route(points, edges_haversine)
 edges_summary <- edges.summary(edges_route)
+
 edges.plot(points, edges_route)
+# edges_route_matrix <- edges.route.matrix(edges_route)
 
 distance_matrix <- distance.matrix(edges_summary)
 
 
 # Optimization ------------------------------------------------------------
 
+if(F){
 c(d,tours,best_tour) %<-% simulated.annealing(points, distance_matrix)
 
 atsp <- TSP::ATSP(distance_matrix)
@@ -65,6 +68,6 @@ tour <- TSP::solve_TSP(x = atsp, method="farthest_insertion") %>% as.integer()
 
 plot.tour(best_tour, edges_route)
 plot.tour.map(best_tour, edges_route)
-
+}
 
 
