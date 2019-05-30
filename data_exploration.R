@@ -164,10 +164,10 @@ data_exploring_map <- leaflet::leaflet(options = leaflet::leafletOptions(minZoom
                        fillColor = ~COLOR, fillOpacity = 0.5, dashArray="4",
                        highlight = leaflet::highlightOptions(weight = 5, color = "#666",dashArray = "",fillOpacity = 0.8,bringToFront = TRUE)) %>% 
   leaflet::addLayersControl(
-    overlayGroups = c("Contenedores Aceite", "Contenedores Ropa", "Contenedores Pilas", "Contenedores Vidrio",
-                      "Puntos Limpios Fijos", "Puntos Limpios Moviles", "Puntos Limpios Proximidad", 
-                      "Distritos", "Barrios", "Madrid Central"),
-    position = "topright",
+    overlayGroups = c("Distritos", "Barrios", "Madrid Central"),
+    baseGroups =  c("Contenedores Aceite", "Contenedores Ropa", "Contenedores Pilas", "Contenedores Vidrio",
+                    "Puntos Limpios Fijos", "Puntos Limpios Moviles", "Puntos Limpios Proximidad"),
+    position = "topright", 
     options = leaflet::layersControlOptions(collapsed = F)
   ) %>% 
   leaflet::addMiniMap(position = "bottomleft", toggleDisplay = T, minimized = T) %>% 
@@ -181,4 +181,4 @@ data_exploring_map <- leaflet::leaflet(options = leaflet::leafletOptions(minZoom
     activeColor = "#3D535D",
     completedColor = "#7D4479")
 
-data_exploring_map
+
