@@ -38,7 +38,10 @@ ui <- shiny::fluidPage(
                                                                     
                                                       ),
                                                       shiny::column(9,
-                                                                    shiny::column(8,shiny::plotOutput("route", height = "800px")),
+                                                                    shiny::column(8,
+                                                                                  # shiny::plotOutput("route", height = "800px"),
+                                                                                  leaflet::leafletOutput("routemap", height = "800px")
+                                                                                  ),
                                                                     shiny::column(4,
                                                                                   shiny::plotOutput("scurve", height= "400px"),
                                                                                   shiny::plotOutput("distance", height= "400px")
@@ -146,6 +149,10 @@ server <- function(input, output, session) {
   })
   output$route <- shiny::renderPlot({
     if (all(is.na(vals$distances))) return (edges.plot(points, edges_route))
+    plot.tour(vals$best_tour, edges_route)
+  })
+  output$routemap <- leaflet::renderLeaflet({
+    if (all(is.na(vals$distances))) return (edges.plot.map(points, edges_route))
     plot.tour.map(vals$best_tour, edges_route)
   })
   output$distance <- shiny::renderPlot({
