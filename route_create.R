@@ -104,12 +104,12 @@ edges.summary <- function(edges_route){
     dplyr::arrange(i,j)
 }
 
-distance.matrix <- function(edges){
+distance.matrix <- function(edges, variable){
   n <- max(edges$i, edges$j)
   distance_matrix <- matrix(1e9, nrow = n, ncol = n)
   diag(distance_matrix) <- 1e9
   for(x in 1: nrow(edges)){
-    distance_matrix[edges$i[x],edges$j[x]] <- edges$traffic_time[x]
+    distance_matrix[edges$i[x],edges$j[x]] <- edges[x,variable]
   }
   # image(distance_matrix)
   distance_matrix
@@ -140,7 +140,7 @@ edges.plot.map <- function(points, edges_route){
     leaflet::addMarkers(data = points %>% dplyr::mutate(point_id=1:n()), 
                         lat = ~latitude, lng = ~longitude, label = ~as.character(point_id), 
                         group = "Contenedores Vidrio")
-    # leaflet::addPolygons(data=edges_route, lng=~route_long, lat=~route_lat, group = "All Paths", fill = F)
+  # leaflet::addPolygons(data=edges_route, lng=~route_long, lat=~route_lat, group = "All Paths", fill = F)
   
   groups <- edges_route %>% dplyr::pull(route_id) %>% unique()
   pal <- leaflet::colorFactor(viridis::plasma(nrow(points)-1), groups)
@@ -153,7 +153,7 @@ edges.plot.map <- function(points, edges_route){
   map
 }
 
-plot.tour <- function(tour, edges_route){
+plot.tour <- function(tour, points, edges_route){
   # tour <- as.integer(tour)
   # tour[length(tour)+1] <- tour[1]
   # data.frame(i=tour, j=lead(tour,1)) %>% 
@@ -174,29 +174,36 @@ plot.tour <- function(tour, edges_route){
     ggplot2::theme(legend.position = "none")
 }
 
-plot.tour.map <- function(tour, edges_route){
+plot.tour.map <- function(tour, points, edges_route){
   tour_path <- embed(c(i=tour, tour[1]), 2) %>% 
     as.data.frame() %>% 
     plyr::rename(c("V1"="i","V2"="j")) %>% 
     dplyr::mutate(solution_id = 1:n()) %>% 
     merge(edges_route, by=c("i","j"), all.x = T, sort=F) %>% 
     dplyr::arrange(solution_id, step_id) %>% 
-    dplyr::mutate(label = paste0("From ",i," to ", j))
+    dplyr::mutate(label = paste0("<center><b>",start_street_name,"</b></br>",
+                                 "\\/</br><b>",
+                                 stop_street_name,
+                                 "</b></center>"))
   map <- leaflet::leaflet(options = leaflet::leafletOptions(minZoom = 0, maxZoom = 18)) %>% 
-    leaflet::addProviderTiles(leaflet::providers$Wikimedia, group = "Tiles") %>% 
-    leaflet::addMarkers(data = points %>% dplyr::mutate(point_id=1:n()), 
-                        lat = ~latitude, lng = ~longitude, label = ~as.character(point_id), 
-                        group = "Contenedores Vidrio")
+    leaflet::addProviderTiles(leaflet::providers$Hydda.Base, group = "Tiles")
   groups <- tour_path %>% dplyr::pull(solution_id) %>% unique()
   pal <- leaflet::colorFactor(viridis::plasma(length(tour)-1), groups)
   for(g in groups){
     data_g <- tour_path[tour_path$solution_id == g, ]
     map <- map %>% leaflet::addPolylines(data = data_g, group = paste0("Lines_",g), 
                                          lng = ~route_long, lat = ~route_lat,
-                                         color = ~pal(g), label = ~lapply(label, htmltools::HTML),
-                                         weight = 2
+                                         #color = ~pal(g), label = ~lapply(label, htmltools::HTML),
+                                         color = "#F39629", label = ~lapply(label, htmltools::HTML),
+                                         weight = 2, smoothFactor = 10, 
+                                         highlightOptions = leaflet::highlightOptions(color = "blue", weight = 5, bringToFront = T, opacity = 1)
+    
     )
     
   }
-  map %>% leaflet::setView(lat = 40.416673, lng = -3.703803, zoom = 14)
+  map %>%  leaflet::addCircleMarkers(data = points %>% dplyr::mutate(point_id=1:n()),
+                                     lat = ~latitude, lng = ~longitude, label = ~as.character(point_id),
+                                     radius = 5, stroke = F, color = "#F85C50", fillOpacity = 1,
+                                     group = "Contenedores Vidrio") %>% 
+    leaflet::setView(lat = 40.416673, lng = -3.703803, zoom = 14)
 }
