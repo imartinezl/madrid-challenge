@@ -29,17 +29,20 @@ ui <- shiny::fluidPage(
                                       shiny::tabPanel("Optimize Route", 
                                                       shiny::column(3,
                                                                     shiny::h3("Simulated Annealing Parameters"),
-                                                                    shiny::numericInput("s_curve_amplitude", "S-curve Amplitude", value = 4000, step = 500, min = 0),
-                                                                    shiny::numericInput("s_curve_center", "S-curve Center", value = 0, step = 500, min = 0),
-                                                                    shiny::numericInput("s_curve_width", "S-curve Width", value = 3000, step = 500, min = 1),
-                                                                    shiny::numericInput("total_iterations", "Total Iterations", value = 25000, step = 1000, min=1000),
-                                                                    shiny::numericInput("plot_every_iterations", "Draw Map Every N Iterations", value = 500, step = 500, min = 500),
-                                                                    shiny::actionButton("solve", "Solve!")
+                                                                    shiny::numericInput("s_curve_amplitude", "S-curve Amplitude", value = 4000, step = 500, min = 0, width = "35%"),
+                                                                    shiny::numericInput("s_curve_center", "S-curve Center", value = 0, step = 500, min = 0, width = "35%"),
+                                                                    shiny::numericInput("s_curve_width", "S-curve Width", value = 3000, step = 500, min = 1, width = "35%"),
+                                                                    shiny::numericInput("total_iterations", "Total Iterations", value = 25000, step = 1000, min=1000, width = "35%"),
+                                                                    shiny::numericInput("plot_every_iterations", "Draw Map Every", value = 500, step = 500, min = 500, width = "35%"),
+                                                                    shiny::h3("Optimization Parameters"),
+                                                                    shiny::selectInput("optvar", "Optimize", choices = c("traffic_time","distance"), multiple = F, width = "35%"),
+                                                                    shiny::actionButton("solve", "Solve!", width = "35%")
+                                                                    
                                                                     
                                                       ),
                                                       shiny::column(9,
                                                                     shiny::column(8,
-                                                                                  # shiny::plotOutput("route", height = "800px"),
+                                                                                  # shiny::plotOutput("route", height = "800px")
                                                                                   leaflet::leafletOutput("routemap", height = "800px")
                                                                                   ),
                                                                     shiny::column(4,
@@ -67,7 +70,7 @@ server <- function(input, output, session) {
 
     shiny::isolate({
       vals$tour <- sample(nrow(points))
-      vals$tour_distance <- calculate_tour_distance(vals$tour, distance_matrix)
+      vals$tour_distance <- calculate_tour_distance(vals$tour, distance.matrix(edges_summary, input$optvar))
       vals$best_tour <- c()
       vals$best_distance <- Inf
       
@@ -95,7 +98,7 @@ server <- function(input, output, session) {
     isolate({
       intermediate_results = run_intermediate_annealing_process(
         points = points,
-        distance_matrix = distance_matrix,
+        distance_matrix = distance.matrix(edges_summary, input$optvar),
         tour = vals$tour,
         tour_distance = vals$tour_distance,
         best_tour = vals$best_tour,
@@ -149,11 +152,11 @@ server <- function(input, output, session) {
   })
   output$route <- shiny::renderPlot({
     if (all(is.na(vals$distances))) return (edges.plot(points, edges_route))
-    plot.tour(vals$best_tour, edges_route)
+    plot.tour(vals$best_tour, points, edges_route)
   })
   output$routemap <- leaflet::renderLeaflet({
     if (all(is.na(vals$distances))) return (edges.plot.map(points, edges_route))
-    plot.tour.map(vals$best_tour, edges_route)
+    plot.tour.map(vals$best_tour, points, edges_route)
   })
   output$distance <- shiny::renderPlot({
     if (all(is.na(vals$distances))) return(plot.new())
