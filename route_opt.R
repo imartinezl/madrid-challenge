@@ -32,7 +32,7 @@ data_contenedores_vidrio <- read.csv('data/Contenedores_vidrio_con_publicidad.cs
 
 points <- data_contenedores_vidrio %>% 
   # dplyr::slice(1:10) %>% 
-  dplyr::select(LONGITUD, LATITUD) %>% 
+  dplyr::select(LONGITUD, LATITUD) %>%
   plyr::rename(c("LONGITUD"="longitude", "LATITUD"="latitude")) %>% 
   dplyr::mutate(inside_madrid_central = inside.madrid.central(longitude, latitude, madrid_central_data))
 
@@ -53,7 +53,7 @@ edges_summary <- edges.summary(edges_route)
 edges.plot(points, edges_route)
 # edges_route_matrix <- edges.route.matrix(edges_route)
 
-distance_matrix <- distance.matrix(edges_summary)
+# distance_matrix <- distance.matrix(edges_summary, variable)
 
 
 # Optimization ------------------------------------------------------------
