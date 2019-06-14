@@ -171,7 +171,8 @@ data_exploring_map <- leaflet::leaflet(options = leaflet::leafletOptions(minZoom
     options = leaflet::layersControlOptions(collapsed = F)
   ) %>% 
   leaflet::addMiniMap(position = "bottomleft", toggleDisplay = T, minimized = T) %>% 
-  leaflet::hideGroup(group = c("Contenedores Aceite", "Contenedores Ropa", "Contenedores Pilas", "Contenedores Vidrio",
+  leaflet::hideGroup(group = c("Distritos", "Barrios",
+                               #"Contenedores Aceite", "Contenedores Ropa", "Contenedores Pilas", "Contenedores Vidrio",
                                "Puntos Limpios Fijos", "Puntos Limpios Moviles", "Puntos Limpios Proximidad")) %>% 
   leaflet::setView(lat = 40.416673, lng = -3.703803, zoom = 13) %>% 
   leaflet::addMeasure(
@@ -180,5 +181,5 @@ data_exploring_map <- leaflet::leaflet(options = leaflet::leafletOptions(minZoom
     primaryAreaUnit = "sqmeters",
     activeColor = "#3D535D",
     completedColor = "#7D4479")
-
+# data_exploring_map
 
