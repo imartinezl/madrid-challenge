@@ -136,10 +136,7 @@ edges.route.matrix <- function(edges_route){
 }
 edges.plot.map <- function(points, edges_route){
   map <- leaflet::leaflet(options = leaflet::leafletOptions(minZoom = 0, maxZoom = 18)) %>% 
-    leaflet::addProviderTiles(leaflet::providers$Wikimedia, group = "Tiles") %>% 
-    leaflet::addMarkers(data = points %>% dplyr::mutate(point_id=1:n()), 
-                        lat = ~latitude, lng = ~longitude, label = ~as.character(point_id), 
-                        group = "Contenedores Vidrio")
+    leaflet::addProviderTiles(leaflet::providers$CartoDB.DarkMatter, group = "Tiles")
   # leaflet::addPolygons(data=edges_route, lng=~route_long, lat=~route_lat, group = "All Paths", fill = F)
   
   groups <- edges_route %>% dplyr::pull(route_id) %>% unique()
@@ -150,7 +147,10 @@ edges.plot.map <- function(points, edges_route){
                                          lng = ~route_long, lat = ~route_lat,
                                          color = ~pal(g), weight = 2)
   }
-  map
+  map %>% leaflet::addCircleMarkers(data = points %>% dplyr::mutate(point_id=1:n()),
+                              lat = ~latitude, lng = ~longitude, label = ~as.character(point_id),
+                              radius = 5, stroke = T, color = "#c2d5e8", fillOpacity = 1, #F85C50
+                              group = "Contenedores Vidrio")
 }
 
 plot.tour <- function(tour, points, edges_route){
@@ -174,36 +174,40 @@ plot.tour <- function(tour, points, edges_route){
     ggplot2::theme(legend.position = "none")
 }
 
-plot.tour.map <- function(tour, points, edges_route){
+plot.tour.map <- function(tour, points, edges_route, calculating){
   tour_path <- embed(c(i=tour, tour[1]), 2) %>% 
     as.data.frame() %>% 
     plyr::rename(c("V1"="i","V2"="j")) %>% 
     dplyr::mutate(solution_id = 1:n()) %>% 
     merge(edges_route, by=c("i","j"), all.x = T, sort=F) %>% 
     dplyr::arrange(solution_id, step_id) %>% 
-    dplyr::mutate(label = paste0("<center><b>",start_street_name,"</b></br>",
-                                 "\\/</br><b>",
+    dplyr::mutate(label = paste0("<center><b>",start_street_name,"</br>",
+                                 "\\/</br>",
                                  stop_street_name,
                                  "</b></center>"))
-  map <- leaflet::leaflet(options = leaflet::leafletOptions(minZoom = 0, maxZoom = 18)) %>% 
-    leaflet::addProviderTiles(leaflet::providers$Hydda.Base, group = "Tiles")
+  map <- leaflet::leaflet(options = leaflet::leafletOptions(minZoom = 0, maxZoom = 18))
+  if(!calculating){
+    map <- map %>% leaflet::addProviderTiles(leaflet::providers$CartoDB.DarkMatter, group = "Tiles")
+  }
+    # leaflet.mapboxgl::addMapboxGL(style='mapbox://styles/inigoml/cjq0uk62956tg2roayaaxkocg',
+                                  # accessToken = 'pk.eyJ1IjoiaW5pZ29tbCIsImEiOiJjamcycndxcDAwcmlsMnFwaHk4eDdpanhnIn0.lOge1jvtZgNLhr6yUdz8qA')
   groups <- tour_path %>% dplyr::pull(solution_id) %>% unique()
   pal <- leaflet::colorFactor(viridis::plasma(length(tour)-1), groups)
   for(g in groups){
     data_g <- tour_path[tour_path$solution_id == g, ]
     map <- map %>% leaflet::addPolylines(data = data_g, group = paste0("Lines_",g), 
                                          lng = ~route_long, lat = ~route_lat,
-                                         #color = ~pal(g), label = ~lapply(label, htmltools::HTML),
-                                         color = "#F39629", label = ~lapply(label, htmltools::HTML),
+                                         color = ~pal(g), label = ~lapply(label, htmltools::HTML),
+                                         # color = "#E4FFF9", label = ~lapply(label, htmltools::HTML), #F39629
                                          weight = 2, smoothFactor = 10, 
                                          highlightOptions = leaflet::highlightOptions(color = "blue", weight = 5, bringToFront = T, opacity = 1)
-    
+                                         
     )
     
   }
   map %>%  leaflet::addCircleMarkers(data = points %>% dplyr::mutate(point_id=1:n()),
                                      lat = ~latitude, lng = ~longitude, label = ~as.character(point_id),
-                                     radius = 5, stroke = F, color = "#F85C50", fillOpacity = 1,
-                                     group = "Contenedores Vidrio") %>% 
-    leaflet::setView(lat = 40.416673, lng = -3.703803, zoom = 14)
+                                     radius = 5, stroke = T, color = "#c2d5e8", fillOpacity = 1, #F85C50
+                                     group = "Contenedores Vidrio")# %>% 
+    #leaflet::setView(lat = 40.416673, lng = -3.703803, zoom = 14)
 }
