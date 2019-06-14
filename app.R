@@ -7,7 +7,7 @@ library(zeallot)
 
 # Data Visualization ------------------------------------------------------
 
-#source('data_exploration.R')
+source('data_exploration.R')
 
 # Route Optimization ------------------------------------------------------
 
@@ -25,7 +25,10 @@ ui <- shiny::fluidPage(
   shiny::titlePanel("Madrid Route Optimization Challenge"),
   shiny::mainPanel(width = 12,
                    shiny::tabsetPanel(selected = "Optimize Route",
-                                      shiny::tabPanel("Explore Map", leaflet::leafletOutput("mymap", width = "100%", height="800px")),
+                                      shiny::tabPanel("Explore Map", 
+                                                      shinycssloaders::withSpinner(
+                                                        leaflet::leafletOutput("mymap", width = "100%", height="800px"), type=4,color = "#9598a0")
+                                      ),
                                       shiny::tabPanel("Optimize Route", 
                                                       shiny::column(3,
                                                                     shiny::h3("Simulated Annealing Parameters"),
@@ -41,21 +44,20 @@ ui <- shiny::fluidPage(
                                                                     
                                                       ),
                                                       shiny::column(9,
-                                                                    shiny::column(8,
-                                                                                  # shiny::plotOutput("route", height = "800px")
-                                                                                  leaflet::leafletOutput("routemap", height = "800px")
-                                                                                  ),
                                                                     shiny::column(4,
                                                                                   shiny::plotOutput("scurve", height= "400px"),
                                                                                   shiny::plotOutput("distance", height= "400px")
+                                                                                  ),
+                                                                    shiny::column(8,
+                                                                                  # shiny::plotOutput("route", height = "800px")
+                                                                                  leaflet::leafletOutput("routemap", height = "800px")
                                                                                   )
                                                       
                                                       )
                                       )
                    )
   )
-  #leaflet::leafletOutput("mymap", width = "100%", height="800px")
-  
+
 )
 
 #https://github.com/toddwschneider/shiny-salesman
@@ -63,7 +65,7 @@ server <- function(input, output, session) {
   
   vals <- shiny::reactiveValues(iter=0)
   output$mymap <- leaflet::renderLeaflet({
-    #data_exploring_map
+    data_exploring_map
   })
   setup_to_run_annealing_process = observe({
     input$solve
@@ -120,7 +122,7 @@ server <- function(input, output, session) {
       vals$distances[ceiling(vals$iter / vals$plot_every_iterations)] = intermediate_results$tour_distance
     })
     
-    if (shiny::isolate(vals$iter) < isolate(vals$total_iterations)) {
+    if (shiny::isolate(vals$iter) < shiny::isolate(vals$total_iterations)) {
       invalidateLater(0, session)
     } else {
       isolate({
@@ -156,7 +158,11 @@ server <- function(input, output, session) {
   })
   output$routemap <- leaflet::renderLeaflet({
     if (all(is.na(vals$distances))) return (edges.plot.map(points, edges_route))
-    plot.tour.map(vals$best_tour, points, edges_route)
+    if (shiny::isolate(vals$iter) == shiny::isolate(vals$total_iterations)){
+      plot.tour.map(vals$best_tour, points, edges_route, F)
+    }else{
+      plot.tour.map(vals$best_tour, points, edges_route, T)
+    }
   })
   output$distance <- shiny::renderPlot({
     if (all(is.na(vals$distances))) return(plot.new())
