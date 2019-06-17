@@ -13,7 +13,7 @@ data_barrios <- read.csv('data/CALLEJERO_VIGENTE_BARRIOS_201809.csv', sep=';')
 barrios_shp <- rgdal::readOGR("data/Barrios_ETRS89/BARRIOS.shp", GDAL1_integer64_policy = TRUE)
 barrios_shp <- sp::spTransform(barrios_shp, sp::CRS("+init=epsg:4326"))
 barrios_shp@data <- barrios_shp@data %>% 
-  dplyr::mutate(COLOR = sample(viridis::plasma(n())),
+  dplyr::mutate(COLOR = sample(viridis::cividis(n())),
                 LABEL = paste0("<b>Barrio:</b> ", NOMBRE))
 
 
@@ -21,7 +21,7 @@ data_distritos <- read.csv('data/CALLEJERO_VIGENTE_DISTRITOS_201809.csv', sep=';
 distritos_shp <- rgdal::readOGR("data/Distritos_ETRS89/DISTRITOS.shp", GDAL1_integer64_policy = TRUE)
 distritos_shp <- sp::spTransform(distritos_shp, sp::CRS("+init=epsg:4326"))
 distritos_shp@data <- distritos_shp@data %>% 
-  dplyr::mutate(COLOR = sample(viridis::plasma(n())),
+  dplyr::mutate(COLOR = sample(viridis::viridis(n())),
                 AREA_KM = round(SHAPE_area/1e6,2),
                 LABEL = paste0("<b>Distrito:</b> ", NOMBRE, "</br><b>Superficie:</b> ", AREA_KM, "km<sup>2</sup>"))
 
