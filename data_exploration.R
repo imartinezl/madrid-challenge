@@ -136,44 +136,54 @@ icon_puntos_limpios_fijos <- leaflet::makeIcon( iconUrl = "icons/trash.png", ico
 icon_puntos_limpios_moviles <- leaflet::makeIcon( iconUrl = "icons/garbage-truck.png", iconWidth = 17, iconHeight = 17)
 icon_puntos_limpios_proximidad <- leaflet::makeIcon( iconUrl = "icons/delete.png", iconWidth = 15, iconHeight = 15)
 
+github_icons <- 'https://raw.githubusercontent.com/imartinezl/madrid-challenge/master/icons/'
+img_size <- "' height='15' width='15'/> "
+oil <- paste0("<img src='", github_icons, "oil.png", img_size, "Oil")
+clothes <- paste0("<img src='", github_icons, "hanger.png", img_size, "Clothes")
+batteries <- paste0("<img src='", github_icons, "battery.png", img_size, "Batteries")
+glass <- paste0("<img src='", github_icons, "glass-container.png", img_size, "Glass")
+recycling_point <- paste0("<img src='", github_icons, "trash.png", img_size, "Recycling Point")
+mobile_recycling_point <- paste0("<img src='", github_icons, "garbage-truck.png", img_size, "Mobile Recycling Point")
+proximity_recycling_point <- paste0("<img src='", github_icons, "delete.png", img_size, "Proximity Recycling Point")
+
 data_exploring_map <- leaflet::leaflet(options = leaflet::leafletOptions(minZoom = 0, maxZoom = 18)) %>% 
   leaflet::addProviderTiles(leaflet::providers$Wikimedia, group = "Tiles") %>%
-  leaflet::addMarkers(data = data_contenedores_aceite, lat = ~ LATITUD, lng = ~ LONGITUD, group = "Contenedores Aceite", 
+  leaflet::addMarkers(data = data_contenedores_aceite, lat = ~ LATITUD, lng = ~ LONGITUD, group = oil, 
                       icon = icon_contenedores_aceite, label = ~lapply(LABEL, htmltools::HTML)) %>%
-  leaflet::addMarkers(data = data_contenedores_ropa, lat = ~ LATITUD, lng = ~ LONGITUD, group = "Contenedores Ropa", 
+  leaflet::addMarkers(data = data_contenedores_ropa, lat = ~ LATITUD, lng = ~ LONGITUD, group = clothes, 
                       icon = icon_contenedores_ropa, label = ~lapply(LABEL, htmltools::HTML)) %>%
-  leaflet::addMarkers(data = data_contenedores_pilas, lat = ~ LATITUD, lng = ~ LONGITUD, group = "Contenedores Pilas",
+  leaflet::addMarkers(data = data_contenedores_pilas, lat = ~ LATITUD, lng = ~ LONGITUD, group = batteries,
                       icon = icon_contenedores_pilas, label = ~lapply(LABEL, htmltools::HTML)) %>%
-  leaflet::addMarkers(data = data_contenedores_vidrio, lat = ~ LATITUD, lng = ~ LONGITUD, group = "Contenedores Vidrio",
+  leaflet::addMarkers(data = data_contenedores_vidrio, lat = ~ LATITUD, lng = ~ LONGITUD, group = glass,
                       icon = icon_contenedores_vidrio, label = ~lapply(LABEL, htmltools::HTML)) %>%
-  leaflet::addMarkers(data = data_puntos_limpios_fijos, lat = ~ LATITUD, lng = ~ LONGITUD, group = "Puntos Limpios Fijos",
+  leaflet::addMarkers(data = data_puntos_limpios_fijos, lat = ~ LATITUD, lng = ~ LONGITUD, group = recycling_point,
                       icon = icon_puntos_limpios_fijos, label = ~lapply(LABEL, htmltools::HTML)) %>%
-  leaflet::addMarkers(data = data_puntos_limpios_moviles, lat = ~ LATITUD, lng = ~ LONGITUD, group = "Puntos Limpios Moviles",
+  leaflet::addMarkers(data = data_puntos_limpios_moviles, lat = ~ LATITUD, lng = ~ LONGITUD, group = mobile_recycling_point,
                       icon = icon_puntos_limpios_moviles, label = ~lapply(LABEL, htmltools::HTML)) %>%
-  leaflet::addMarkers(data = data_puntos_limpios_proximidad, lat = ~ LATITUD, lng = ~ LONGITUD, group = "Puntos Limpios Proximidad",
+  leaflet::addMarkers(data = data_puntos_limpios_proximidad, lat = ~ LATITUD, lng = ~ LONGITUD, group = proximity_recycling_point,
                       icon = icon_puntos_limpios_proximidad, label = ~lapply(LABEL, htmltools::HTML)) %>%
   leaflet::addPolygons(data = madrid_central, group = "Madrid Central",
                        color = "#1c1c1c", weight = 3, opacity = 0.4, 
                        fillColor = "#1c1c1c", fillOpacity = 0.2, dashArray="4") %>% 
-  leaflet::addPolygons(data = distritos_shp, group = "Distritos",
+  leaflet::addPolygons(data = distritos_shp, group = "Districts",
                        label = ~lapply(LABEL, htmltools::HTML), stroke = F,
                        fillColor = ~COLOR, fillOpacity = 0.5, dashArray="4",
                        highlight = leaflet::highlightOptions(weight = 5, color = "#666",dashArray = "",fillOpacity = 0.8,bringToFront = TRUE)) %>% 
-  leaflet::addPolygons(data = barrios_shp, group = "Barrios",
+  leaflet::addPolygons(data = barrios_shp, group = "Neighborhoods",
                        label = ~lapply(LABEL, htmltools::HTML), stroke = F,
                        fillColor = ~COLOR, fillOpacity = 0.5, dashArray="4",
                        highlight = leaflet::highlightOptions(weight = 5, color = "#666",dashArray = "",fillOpacity = 0.8,bringToFront = TRUE)) %>% 
   leaflet::addLayersControl(
-    overlayGroups = c("Distritos", "Barrios", "Madrid Central"),
-    baseGroups =  c("Contenedores Aceite", "Contenedores Ropa", "Contenedores Pilas", "Contenedores Vidrio",
-                    "Puntos Limpios Fijos", "Puntos Limpios Moviles", "Puntos Limpios Proximidad"),
-    position = "topright", 
+    overlayGroups = c("Districts", "Neighborhoods", "Madrid Central"),
+    baseGroups =  c(oil, clothes, batteries, glass,
+                    recycling_point, mobile_recycling_point, proximity_recycling_point),
+    position = "topright",
     options = leaflet::layersControlOptions(collapsed = F)
-  ) %>% 
+  ) %>%
   leaflet::addMiniMap(position = "bottomleft", toggleDisplay = T, minimized = T) %>% 
-  leaflet::hideGroup(group = c("Distritos", "Barrios",
-                               #"Contenedores Aceite", "Contenedores Ropa", "Contenedores Pilas", "Contenedores Vidrio",
-                               "Puntos Limpios Fijos", "Puntos Limpios Moviles", "Puntos Limpios Proximidad")) %>% 
+  leaflet::hideGroup(group = c("Districts", "Neighborhoods",
+                               # oil, clothes, batteries, glass,
+                               recycling_point, mobile_recycling_point, proximity_recycling_point)) %>% 
   leaflet::setView(lat = 40.416673, lng = -3.703803, zoom = 13) %>% 
   leaflet::addMeasure(
     position = "bottomleft",
@@ -181,5 +191,4 @@ data_exploring_map <- leaflet::leaflet(options = leaflet::leafletOptions(minZoom
     primaryAreaUnit = "sqmeters",
     activeColor = "#3D535D",
     completedColor = "#7D4479")
-# data_exploring_map
-
+data_exploring_map
