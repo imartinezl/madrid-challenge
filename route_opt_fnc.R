@@ -91,7 +91,14 @@ simulated.annealing <- function(points, distance_matrix){
   }
   return(list(d=distances, tours=tours, best_tour=best_tour))
 }
-
+tour.result <- function(tour, edges_summary){
+  embed(c(i=tour, tour[1]), 2) %>% 
+    as.data.frame() %>% 
+    plyr::rename(c("V1"="j","V2"="i")) %>% 
+    merge(edges_summary) %>% 
+    dplyr::summarise(total_time = sum(traffic_time),
+                     total_distance = sum(distance))
+}
 
 # Linear Programming Problem ----------------------------------------------------------------
 
