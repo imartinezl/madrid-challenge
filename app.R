@@ -22,18 +22,22 @@ ensure_between = function(num, min_allowed, max_allowed) {
 
 ui <- shiny::fluidPage(
   theme = shinythemes::shinytheme("united"),
-  shiny::titlePanel("Madrid Route Optimization Challenge"),
+  shiny::titlePanel(title = NULL, #shiny::h3("Madrid Route Optimization Challenge", style="align-text:right"), 
+                    windowTitle = "Madrid Open Data"),
+  shiny::a(shiny::h3("Madrid Route Optimization Challenge"), style="position:absolute; right: 50px; top: 0px;"),
   shiny::mainPanel(width = 12,
                    shiny::tabsetPanel(selected = "Optimize Route",
                                       shiny::tabPanel("Explore Map", 
                                                       shinycssloaders::withSpinner(
-                                                        leaflet::leafletOutput("mymap", width = "100%", height="800px"), type=4,color = "#9598a0")
+                                                        leaflet::leafletOutput("mymap", width = "100%", height="875px"), type=4,color = "#9598a0")
                                       ),
                                       shiny::tabPanel("Optimize Route", 
                                                       shiny::column(6, 
                                                                     shiny::fluidRow(
                                                                       shiny::column(6, align="center",
-                                                                                    shiny::h3("Simulated Annealing"),
+                                                                                    shiny::h4("Simulated Annealing", style="padding-top:10px;"),
+                                                                                    shiny::hr(),
+                                                                                    # shiny::hr(style="margin-top:0px; margin-bottom:5px"),
                                                                                     shiny::numericInput("s_curve_amplitude", "S-curve Amplitude", value = 4000, step = 500, min = 0, width = "50%"),
                                                                                     shiny::numericInput("s_curve_center", "S-curve Center", value = 0, step = 500, min = 0, width = "50%"),
                                                                                     shiny::numericInput("s_curve_width", "S-curve Width", value = 3000, step = 500, min = 1, width = "50%"),
@@ -41,9 +45,12 @@ ui <- shiny::fluidPage(
                                                                                     shiny::numericInput("plot_every_iterations", "Draw Map Every", value = 500, step = 500, min = 500, width = "50%")
                                                                       ),
                                                                       shiny::column(6, align="center",
-                                                                                    shiny::h3("Optimization", style="padding-top:100px;"),
+                                                                                    shiny::h4("Optimization", style="padding-top:100px"),
+                                                                                    shiny::hr(),
                                                                                     shiny::selectInput("optvar", "Optimize", choices = c("traffic_time","distance"), multiple = F, width = "50%"),
-                                                                                    shiny::actionButton("solve", "Solve!", width = "50%")
+                                                                                    shiny::actionButton("solve", "Solve!", width = "50%"),
+                                                                                    shiny::hr(),shiny::br(),
+                                                                                    shiny::htmlOutput("total")
                                                                       )),
                                                                     shiny::fluidRow(
                                                                       shiny::column(6, align="center", shiny::plotOutput("scurve", height= "400px")),
@@ -53,7 +60,7 @@ ui <- shiny::fluidPage(
                                                       ),
                                                       shiny::column(6,
                                                                     # shiny::plotOutput("route", height = "800px")
-                                                                    leaflet::leafletOutput("routemap", height = "800px")
+                                                                    leaflet::leafletOutput("routemap", height = "875px")
                                                       )
                                       )
                    )
@@ -128,6 +135,7 @@ server <- function(input, output, session) {
       isolate({
         vals$tour = vals$best_tour
         vals$tour_distance = vals$best_distance
+        c(vals$total_time, vals$total_distance) %<-% tour.result(vals$best_tour, edges_summary)
       })
     }
   }, priority=10)
@@ -158,26 +166,33 @@ server <- function(input, output, session) {
   })
   output$routemap <- leaflet::renderLeaflet({
     if (all(is.na(vals$distances))) return (edges.plot.map(points, edges_route))
-    if (shiny::isolate(vals$iter) == shiny::isolate(vals$total_iterations)){
+    if (shiny::isolate(vals$iter) >= shiny::isolate(vals$total_iterations)){
       plot.tour.map(vals$best_tour, points, edges_route, F)
     }else{
       plot.tour.map(vals$best_tour, points, edges_route, T)
     }
   })
   output$distance <- shiny::renderPlot({
-    print(vals$distances)
     if (all(is.na(vals$distances))){ #return(plot.new())
       plot(vals$plot_every_iterations * (1:vals$number_of_loops), 0 * (1:vals$number_of_loops),
-           type='o', pch=19, cex=0.7, main="Evolution of Current Tour Distance",
-           xlab="iterations", ylab="current tour distance",
+           type='o', pch=19, cex=0.7, main="Evolution of Current Tour Metric",
+           xlab="iterations", ylab="current tour metric"
       )
     } else{
       plot(vals$plot_every_iterations * (1:vals$number_of_loops), vals$distances,
-           type='o', pch=19, cex=0.7, main="Evolution of Current Tour Distance",
-           ylim=c(0, max(vals$distances, na.rm=TRUE)), xlab="iterations", ylab="current tour distance",
+           type='o', pch=19, cex=0.7, main="Evolution of Current Tour Metric",
+           ylim=c(0, max(vals$distances, na.rm=TRUE)), xlab="iterations", ylab="current tour metric",
       )
     }
-    
+  })
+  output$total <- shiny::renderUI({ 
+    if (is.null(vals$total_time)){
+      return(shiny::HTML(paste0("<b>Tour duration:</b> Ø minutes</br></br>",
+                                "<b>Tour distance:</b> Ø meters")))
+    }else{
+      return(shiny::HTML(paste0("<b>Tour duration:</b> ", round(vals$total_time/60), " minutes</br></br>",
+                                "<b>Tour distance:</b> ", vals$total_distance, " meters")))
+    }
   })
   session$onSessionEnded(function() {
     run_annealing_process$suspend()
@@ -186,3 +201,4 @@ server <- function(input, output, session) {
 }
 
 shiny::shinyApp(ui, server)
+
