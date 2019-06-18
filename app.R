@@ -7,7 +7,7 @@ library(zeallot)
 
 # Data Visualization ------------------------------------------------------
 
-source('data_exploration.R')
+#source('data_exploration.R')
 
 # Route Optimization ------------------------------------------------------
 
@@ -30,34 +30,34 @@ ui <- shiny::fluidPage(
                                                         leaflet::leafletOutput("mymap", width = "100%", height="800px"), type=4,color = "#9598a0")
                                       ),
                                       shiny::tabPanel("Optimize Route", 
-                                                      shiny::column(3,
-                                                                    shiny::h3("Simulated Annealing Parameters"),
-                                                                    shiny::numericInput("s_curve_amplitude", "S-curve Amplitude", value = 4000, step = 500, min = 0, width = "35%"),
-                                                                    shiny::numericInput("s_curve_center", "S-curve Center", value = 0, step = 500, min = 0, width = "35%"),
-                                                                    shiny::numericInput("s_curve_width", "S-curve Width", value = 3000, step = 500, min = 1, width = "35%"),
-                                                                    shiny::numericInput("total_iterations", "Total Iterations", value = 25000, step = 1000, min=1000, width = "35%"),
-                                                                    shiny::numericInput("plot_every_iterations", "Draw Map Every", value = 500, step = 500, min = 500, width = "35%"),
-                                                                    shiny::h3("Optimization Parameters"),
-                                                                    shiny::selectInput("optvar", "Optimize", choices = c("traffic_time","distance"), multiple = F, width = "35%"),
-                                                                    shiny::actionButton("solve", "Solve!", width = "35%")
-                                                                    
+                                                      shiny::column(6, 
+                                                                    shiny::fluidRow(
+                                                                      shiny::column(6, align="center",
+                                                                                    shiny::h3("Simulated Annealing"),
+                                                                                    shiny::numericInput("s_curve_amplitude", "S-curve Amplitude", value = 4000, step = 500, min = 0, width = "50%"),
+                                                                                    shiny::numericInput("s_curve_center", "S-curve Center", value = 0, step = 500, min = 0, width = "50%"),
+                                                                                    shiny::numericInput("s_curve_width", "S-curve Width", value = 3000, step = 500, min = 1, width = "50%"),
+                                                                                    shiny::numericInput("total_iterations", "Total Iterations", value = 25000, step = 1000, min=1000, width = "50%"),
+                                                                                    shiny::numericInput("plot_every_iterations", "Draw Map Every", value = 500, step = 500, min = 500, width = "50%")
+                                                                      ),
+                                                                      shiny::column(6, align="center",
+                                                                                    shiny::h3("Optimization", style="padding-top:100px;"),
+                                                                                    shiny::selectInput("optvar", "Optimize", choices = c("traffic_time","distance"), multiple = F, width = "50%"),
+                                                                                    shiny::actionButton("solve", "Solve!", width = "50%")
+                                                                      )),
+                                                                    shiny::fluidRow(
+                                                                      shiny::column(6, align="center", shiny::plotOutput("scurve", height= "400px")),
+                                                                      shiny::column(6, align="center", shiny::plotOutput("distance", height= "400px"))
+                                                                    )
                                                                     
                                                       ),
-                                                      shiny::column(9,
-                                                                    shiny::column(4,
-                                                                                  shiny::plotOutput("scurve", height= "400px"),
-                                                                                  shiny::plotOutput("distance", height= "400px")
-                                                                                  ),
-                                                                    shiny::column(8,
-                                                                                  # shiny::plotOutput("route", height = "800px")
-                                                                                  leaflet::leafletOutput("routemap", height = "800px")
-                                                                                  )
-                                                      
+                                                      shiny::column(6,
+                                                                    # shiny::plotOutput("route", height = "800px")
+                                                                    leaflet::leafletOutput("routemap", height = "800px")
                                                       )
                                       )
                    )
   )
-
 )
 
 #https://github.com/toddwschneider/shiny-salesman
@@ -69,7 +69,7 @@ server <- function(input, output, session) {
   })
   setup_to_run_annealing_process = observe({
     input$solve
-
+    
     shiny::isolate({
       vals$tour <- sample(nrow(points))
       vals$tour_distance <- calculate_tour_distance(vals$tour, distance.matrix(edges_summary, input$optvar))
@@ -94,7 +94,7 @@ server <- function(input, output, session) {
   run_annealing_process = observe({
     qry = shiny::parseQueryString(session$clientData$url_search)
     if (input$solve == 0 & is.null(qry$auto)) return()
-
+    
     if (nrow(isolate(points)) < 2) return()
     
     isolate({
@@ -165,11 +165,18 @@ server <- function(input, output, session) {
     }
   })
   output$distance <- shiny::renderPlot({
-    if (all(is.na(vals$distances))) return(plot.new())
-    plot(vals$plot_every_iterations * (1:vals$number_of_loops), vals$distances,
-         type='o', pch=19, cex=0.7, main="Evolution of Current Tour Distance",
-         ylim=c(0, max(vals$distances, na.rm=TRUE)), xlab="iterations", ylab="current tour distance",
-        )
+    print(vals$distances)
+    if (all(is.na(vals$distances))){ #return(plot.new())
+      plot(vals$plot_every_iterations * (1:vals$number_of_loops), 0 * (1:vals$number_of_loops),
+           type='o', pch=19, cex=0.7, main="Evolution of Current Tour Distance",
+           xlab="iterations", ylab="current tour distance",
+      )
+    } else{
+      plot(vals$plot_every_iterations * (1:vals$number_of_loops), vals$distances,
+           type='o', pch=19, cex=0.7, main="Evolution of Current Tour Distance",
+           ylim=c(0, max(vals$distances, na.rm=TRUE)), xlab="iterations", ylab="current tour distance",
+      )
+    }
     
   })
   session$onSessionEnded(function() {
