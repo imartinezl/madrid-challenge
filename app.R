@@ -7,7 +7,7 @@ library(zeallot)
 
 # Data Visualization ------------------------------------------------------
 
-#source('data_exploration.R')
+source('data_exploration.R')
 
 # Route Optimization ------------------------------------------------------
 
@@ -24,7 +24,7 @@ ui <- shiny::fluidPage(
   theme = shinythemes::shinytheme("united"),
   shiny::titlePanel(title = NULL, #shiny::h3("Madrid Route Optimization Challenge", style="align-text:right"), 
                     windowTitle = "Madrid Open Data"),
-  shiny::a(shiny::h3("Madrid Route Optimization Challenge"), style="position:absolute; right: 50px; top: 0px;"),
+  shiny::a(shiny::h3("Madrid Route Optimization Challenge"), style="position:absolute; right: 50px; top: 0px; z-index:10"),
   shiny::mainPanel(width = 12,
                    shiny::tabsetPanel(selected = "Optimize Route",
                                       shiny::tabPanel("Explore Map", 
