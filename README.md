@@ -1,12 +1,11 @@
 # Madrid Open Data Challenge
 
-This repo contains the code for an open data challenge promoted by [Kopuru](http://kopuru.com/). The final result is hosted on [shinyapps.io](https://www.shinyapps.io/) in available [here](https://imartinezl.shinyapps.io/madrid-challenge/).
+This repo contains the code for an open data challenge promoted by [Kopuru](http://kopuru.com/). 
 
-The [challenge](http://kopuru.com/desafio/reto-open-data-optimizacion-de-la-recogida-de-vidrio-en-madrid-central/) here is to calculate and show on a map which is the shortest route for the collection of glass containers within the district of Madrid Central. In doing so, we could help the City Council of Madrid through the use of data to improve the service to its citizens.
+The [challenge](http://kopuru.com/desafio/reto-open-data-optimizacion-de-la-recogida-de-vidrio-en-madrid-central/) here is to calculate and show on a map which is the shortest route for the collection of glass containers within the district of Madrid Central. In doing so, we could help the City Council of Madrid through the use of data to improve the service to its citizens. 
+The final result is hosted on [shinyapps.io](https://www.shinyapps.io/) and it is available [here](https://imartinezl.shinyapps.io/madrid-challenge/).
 
-<p align="center">
-  <img src="docs/optimization_process.gif"/>
-</p>
+[<img width="900px" src="docs/optimization_process.gif">](https://imartinezl.shinyapps.io/madrid-challenge/)
 
 ## Challenge Objectives
 
