@@ -36,13 +36,36 @@ The mobile recycling points are small, easily identifiable trucks that go to spe
 
 ## Data Preprocessing
 
-## Container Visualization
+First of all, the datasets in *csv* format were downloaded and imported into R. In order to show the information in the proper format, some feature modifications were necessary.
+
+Geographical information in *shp* format, such as the "Madrid Central" delimitation and Madrid districts and neighborhoods were imported with the *readOGR* function from [rgdal](https://cran.r-project.org/web/packages/rgdal/index.html) package. 
+
+In order to detect the glass containers inside the Madrid Central zone, I used the function *point.in.polygon* from the [sp](https://cran.r-project.org/web/packages/sp/index.html) package. Really helpful, by the way. Otherwise I would have stuck a lot of time on this step. 
+
+## Data Visualization
+
+Data visualization was carried out with [leaflet](https://rstudio.github.io/leaflet/) for R. In order to improve the aesthetics, I assigned a icon to each dataset. You can play with the map [here](https://imartinezl.shinyapps.io/madrid-challenge/), on the "Explore Map" tab.
 
 ## Route Optimization
 
-Inspired by Todd W. Schneider [approach](https://github.com/toddwschneider/shiny-salesman), where he designs a Shiny app to solve the traveling salesman problem with simulated annealing.
+The route optimization was inspired by Todd W. Schneider [approach](https://github.com/toddwschneider/shiny-salesman), where he designs a Shiny app to solve the traveling salesman problem with simulated annealing.
 
-### Built with
+### Simulated Annealing
+
+The process of simulated annealing work as follows: It starts by picking an arbitrary initial tour from the set of all valid tours. From that initial tour it “moves around” and checks random neighboring tours to see how good they are. There are so many valid tours that it won’t be able to test every possible solution. But a well-designed annealing process eventually reaches a solution that, if it is not the global optimum, is at least good enough. Here’s a step-by-step guide:
+
+1. Start with a random tour through the selected points. 
+2. Pick a new candidate tour at random from all neighbors of the existing tour This candidate tour might be better or worse compared to the existing tour, i.e. shorter or longer.
+3. If the candidate tour is better than the existing tour, accept it as the new tour.
+4. If the candidate tour is worse than the existing tour, still maybe accept it, according to some probability. The probability of accepting an inferior tour is a function of how much longer the candidate is compared to the current tour, and the temperature of the annealing process. A higher temperature makes you more likely to accept an inferior tour.
+5. Go back to step 2 and repeat many times, lowering the temperature a bit at each iteration, until you get to a low temperature and arrive at your (hopefully global, possibly local) minimum. If you’re not sufficiently satisfied with the result, try the process again, perhaps with a different temperature cooling schedule.
+
+The key to the simulated annealing method is in step 4: even if we’re considering a tour that is worse than the tour we already have, we still sometimes accept the worse tour temporarily, because it might be the stepping stone that gets us out of a local minimum and ultimately closer to the global minimum. The temperature is usually pretty high at the beginning of the annealing process, so that initially we’ll accept more tours, even the bad ones. Over time, though, we lower the temperature until we’re only accepting new tours that improve upon our solution.
+
+Why do we need the annealing step at all? Why not do the same process with 0 temperature, i.e. accept the new tour if and only if it’s better than the existing tour? It turns out if we follow this naive “hill climbing” strategy, we’re far more likely to get stuck in a local minimum. Simulated annealing doesn’t guarantee that we’ll reach the global optimum every time, but it does produce significantly better solutions than the naive hill climbing method. 
+
+
+## Built with
 - [R](https://www.r-project.org/) - Programming Language / 3.6.0
 - [RStudio](https://www.rstudio.com/) - IDE for R / 1.2.1335
 - [dplyr](https://dplyr.tidyverse.org/) - A grammar of data manipulation / 0.8.1
