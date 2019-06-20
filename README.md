@@ -74,6 +74,10 @@ The process of simulated annealing work as follows: It starts by picking an arbi
 4. If the candidate tour is worse than the existing tour, still maybe accept it, according to some probability. The probability of accepting an inferior tour is a function of how much longer the candidate is compared to the current tour, and the temperature of the annealing process. A higher temperature makes you more likely to accept an inferior tour.
 5. Go back to step 2 and repeat many times, lowering the temperature a bit at each iteration, until you get to a low temperature and arrive at your (hopefully global, possibly local) minimum. If you’re not sufficiently satisfied with the result, try the process again, perhaps with a different temperature cooling schedule.
 
+<p align="center">
+  <img src="docs/simulated_annealing.png"/>
+</p>
+
 The key to the simulated annealing method is in step 4: even if we’re considering a tour that is worse than the tour we already have, we still sometimes accept the worse tour temporarily, because it might be the stepping stone that gets us out of a local minimum and ultimately closer to the global minimum. The temperature is usually pretty high at the beginning of the annealing process, so that initially we’ll accept more tours, even the bad ones. Over time, though, we lower the temperature until we’re only accepting new tours that improve upon our solution.
 
 Why do we need the annealing step at all? Why not do the same process with 0 temperature, i.e. accept the new tour if and only if it’s better than the existing tour? It turns out if we follow this naive “hill climbing” strategy, we’re far more likely to get stuck in a local minimum. Simulated annealing doesn’t guarantee that we’ll reach the global optimum every time, but it does produce significantly better solutions than the naive hill climbing method. 
