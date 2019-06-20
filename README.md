@@ -1,16 +1,18 @@
 # Madrid Open Data Challenge
 
-This repo contains the code for an open data challenge promoted by [Kopuru](http://kopuru.com/).
+This repo contains the code for an open data challenge promoted by [Kopuru](http://kopuru.com/). The final result is hosted on [shinyapps.io](https://www.shinyapps.io/) in available [here](https://imartinezl.shinyapps.io/madrid-challenge/).
 
 The [challenge](http://kopuru.com/desafio/reto-open-data-optimizacion-de-la-recogida-de-vidrio-en-madrid-central/) here is to calculate and show on a map which is the shortest route for the collection of glass containers within the district of Madrid Central. In doing so, we could help the City Council of Madrid through the use of data to improve the service to its citizens.
 
+<p align="center">
+  <img src="docs/optimization_process.gif"/>
+</p>
 
 ## Challenge Objectives
 
 - To create a visualization platform that delimits the area of Central Madrid and collects the geolocation of the different types of containers.
 
 - To calculate and visualize the route to be followed identifying the starting point, route, end point and distance travelled. The team that identifies the shortest route (measured in meters) respecting the direction of the streets will win.
-
 
 ## General Idea
 
@@ -19,6 +21,15 @@ So, this is actually not a big deal. First we will create a model of the system 
 ## Data Adquisition
 
 [datos.madrid.es](https://datos.madrid.es/portal/site/egob/) is a service provided by the city council of Madrid with the purpose of providing a large amount of data and information that can be reused by the general public. In this dataset you can find the addresses and geolocalized points of each of the containers of paper-cardboard, glass, containers, organic and remains available in the districts of the city. 
+
+<p align="center">
+  <img width="280px" src="docs/map_explorer_clothes.png"/>
+  <img width="280px" src="docs/map_explorer_batteries.png"/>
+  <img width="280px" src="docs/map_explorer_oil.png"/>
+  <img width="280px" src="docs/map_explorer_recycling_point.png"/>
+  <img width="280px" src="docs/map_explorer_mobile_recycling_point.png"/>
+  <img width="280px" src="docs/map_explorer_proximity_recycling_point.png"/>
+</p>
 
 - [Clothes Containers](https://datos.madrid.es/egob/new/detalle/auxiliar/mapa.jsp?geoUrl=https://datos.madrid.es/egob/catalogo/204410-0-contenedores-ropa.geo): In this dataset you can find the addresses, collection schedules and geolocalized points of each of the used clothing containers that are located at various points in the city, in municipal outbuildings and markets, recycling points, mobile recycling points and proximity recycling points.
 
@@ -33,7 +44,6 @@ The mobile recycling points are small, easily identifiable trucks that go to spe
 
 - [Proximity Recycling Points](https://datos.madrid.es/egob/new/detalle/auxiliar/mapa.jsp?geoUrl=https://datos.madrid.es/egob/catalogo/300198-0-puntos-proximidad.geo): At the proximity recycling points, ten in total, may be deposited twelve different types of domestic waste, used vegetable oil, used clothing and footwear, waste from small electrical and electronic devices, used batteries, fluorescent and energy-saving light bulbs, toner cartridges and aerosols, X-rays, and CDs, DVDs and videotapes. They will be located in limited municipal enclosures, distributed throughout the city's neighbourhoods. Their use is subject to the opening hours of the centres where they are installed, with the exception of the Barceló Market, which is installed in the public thoroughfare.
 
-
 ## Data Preprocessing
 
 First of all, the datasets in *csv* format were downloaded and imported into R. In order to show the information in the proper format, some feature modifications were necessary.
@@ -46,9 +56,13 @@ In order to detect the glass containers inside the Madrid Central zone, I used t
 
 Data visualization was carried out with [leaflet](https://rstudio.github.io/leaflet/) for R. In order to improve the aesthetics, I assigned a icon to each dataset. You can play with the map [here](https://imartinezl.shinyapps.io/madrid-challenge/), on the "Explore Map" tab.
 
+<p align="center">
+  <img src="docs/map_explorer_districts.png"/>
+</p>
+
 ## Route Optimization
 
-The route optimization was inspired by Todd W. Schneider [approach](https://github.com/toddwschneider/shiny-salesman), where he designs a Shiny app to solve the traveling salesman problem with simulated annealing.
+The route optimization was inspired by Todd W. Schneider [approach](https://github.com/toddwschneider/shiny-salesman), where he designs a Shiny app to solve the traveling salesman problem with simulated annealing. THe distances and travel times were queried from [HERE](https://developer.here.com/) maps API. The number of queries were reduced as much as possible, reducing the number of   neighbours to a fixed value N, given that the *completeness* of the graph remained untouched. 
 
 ### Simulated Annealing
 
